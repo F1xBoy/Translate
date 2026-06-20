@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaTech AI Translator</title>
+    <link class="favicon" rel="icon" type="image/jpeg" href="https://i.postimg.cc/RFQvzQpn/image-(1).png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <main class="container">
+        <header>
+            <div class="theme-switch-wrapper">
+                <div class="custom-dropdown" id="themeDropdown">
+                    <div class="dropdown-header theme-toggle" id="themeToggle" style="border-radius: 9999px;">
+                        <i class="fa-solid fa-palette"></i>
+                    </div>
+                    <ul class="dropdown-list" id="themeList">
+                        <li data-value="dark" class="selected">Dark Theme</li>
+                        <li data-value="light">Light Theme</li>
+                        <li data-value="cyberpunk">Cyberpunk</li>
+                        <li data-value="sunset">Sunset</li>
+                        <li data-value="ocean">Ocean</li>
+                        <li data-value="forest">Forest</li>
+                        <li data-value="lavender">Lavender</li>
+                        <li data-value="cherry">Cherry</li>
+                    </ul>
+                </div>
+            </div>
+        <h1><i class="fa-solid fa-language"></i> LinguaTech AI Translator</h1>
+            <p>Fast & accurate translation between multiple languages</p>
+            <p id="supportedCount" class="supported-count"></p>
+        </header>
+
+        <div class="translator-card">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="text">Text <i class="fa-solid fa-align-left"></i></button>
+                <button class="tab-btn" data-tab="document">Document <i class="fa-solid fa-file-lines"></i></button>
+                <button class="tab-btn" data-tab="image">Images <i class="fa-solid fa-image"></i></button>
+            </div>
+            
+            <div class="controls">
+                <div class="lang-selector">
+                    <div class="custom-dropdown" id="sourceDropdown">
+                        <div class="dropdown-header">
+                            <span class="selected-lang" data-value="ru">Russian</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <ul class="dropdown-list">
+                            </ul>
+                    </div>
+
+                    <button id="swapBtn" class="swap-btn" title="Swap Languages">
+                        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    </button>
+
+                    <div class="custom-dropdown" id="targetDropdown">
+                        <div class="dropdown-header">
+                            <span class="selected-lang" data-value="en-US">English (US)</span>
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </div>
+                        <ul class="dropdown-list">
+                            </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content active" id="textTab">
+                <div class="text-areas">
+                    <div class="input-area">
+                        <textarea id="sourceText" placeholder="Введите текст на русском..."></textarea>
+                        <div class="actions">
+                            <div class="left-actions">
+                                <button class="icon-btn" id="clearBtn" title="Clear Text">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <button class="icon-btn" id="listenSourceBtn" title="Listen Source Text">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </button>
+                            </div>
+                            <span class="char-count"><span id="charCount">0</span> / 5000</span>
+                        </div>
+                    </div>
+
+                    <div class="output-area">
+                        <div class="loading-overlay" id="loadingOverlay">
+                            <div class="spinner"></div>
+                        </div>
+                        <textarea id="targetText" placeholder="Translation will appear here..." readonly></textarea>
+                        <div class="actions">
+                            <div class="left-actions">
+                                <button class="icon-btn" id="copyBtn" title="Copy to Clipboard">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                                <button class="icon-btn" id="listenTargetBtn" title="Listen Translated Text">
+                                    <i class="fa-solid fa-volume-high"></i>
+                                </button>
+                            </div>
+                            <span class="copy-feedback" id="copyFeedback">Copied!</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dictionary-container hidden" id="dictionaryContainer">
+                    <h3 class="dict-title">Словарь</h3>
+                    <div class="dict-header">
+                        <span class="dict-word" id="dictWord"></span>
+                    </div>
+                    <div class="dict-entries" id="dictEntries">
+                        </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="documentTab">
+                <div class="file-upload-area" id="dropZone">
+                    <input type="file" id="fileInput" accept=".txt,.md,.csv,.json,.pdf,.html,.xml,.srt" hidden>
+                    <div class="upload-placeholder" id="uploadPlaceholder">
+                        <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                        <h3>Drag & Drop your file here</h3>
+                        <p>or click to browse (.pdf, .txt, .md, .csv, .json, .html, .xml, .srt)</p>
+                        <button class="secondary-btn" id="browseBtn">Browse Files</button>
+                    </div>
+                    <div id="fileInfo" class="file-info hidden">
+                        <i class="fa-solid fa-file-alt file-icon"></i>
+                        <span id="fileName">document.pdf</span>
+                        <button class="icon-btn" id="removeFileBtn"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+                
+                <div class="translation-progress hidden" id="translationProgress">
+                    <p id="progressText">Translating... 0%</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+
+                <div class="download-area hidden" id="downloadArea">
+                    <i class="fa-solid fa-circle-check success-icon"></i>
+                    <h3>Translation Complete!</h3>
+                    <a href="#" class="primary-btn download-btn" id="downloadBtn" download="translated_file.txt">
+                        Download File <i class="fa-solid fa-download"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div class="tab-content" id="imageTab">
+                <div class="file-upload-area" id="imageDropZone">
+                    <input type="file" id="imageInput" accept=".png,.jpg,.jpeg" hidden>
+                    <div class="upload-placeholder" id="imageUploadPlaceholder">
+                        <i class="fa-solid fa-image upload-icon"></i>
+                        <h3>Upload an Image</h3>
+                        <p>Drag & drop or click to browse (.png, .jpg, .jpeg)</p>
+                        <button class="secondary-btn" id="imageBrowseBtn">Browse Images</button>
+                    </div>
+                    <div id="imageFileInfo" class="file-info hidden">
+                        <i class="fa-solid fa-image file-icon"></i>
+                        <span id="imageFileName">image.png</span>
+                        <button class="icon-btn" id="removeImageBtn"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+
+                <div class="image-result-container hidden" id="imageResultContainer">
+                    <div class="image-view-controls">
+                        <button class="toggle-btn active" id="viewOriginalBtn">Original</button>
+                        <button class="toggle-btn" id="viewTranslatedBtn">Translated</button>
+                    </div>
+                    <div class="image-workspace">
+                        <div class="image-overlay-wrapper" id="imageOverlayWrapper">
+                            <img id="imagePreview" src="" alt="Source Image">
+                            <div class="overlay-layer" id="overlayLayer"></div>
+                        </div>
+                    </div>
+                    <div class="image-text-sidebar">
+                        <div class="sidebar-header">
+                            <h4>Extracted Text</h4>
+                            <div class="sidebar-actions" style="display: flex; gap: 0.5rem;">
+                                <button class="icon-btn" id="copyImageTextBtn" title="Copy All Text">
+                                    <i class="fa-regular fa-copy"></i>
+                                </button>
+                                <button class="icon-btn" id="downloadImageBtn" title="Download Translated Image" style="display: none;">
+                                    <i class="fa-solid fa-download"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="translatedImageText" class="translated-text-box"></div>
+                    </div>
+                </div>
+
+                <div class="translation-progress hidden" id="imageProgress">
+                    <p id="imageProgressText">Analyzing image... 0%</p>
+                    <div class="progress-bar">
+                        <div class="image-progress-fill" id="imageProgressFill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script>
+        // Initialize PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+    <script src="app.js"></script>
+</body>
+
+</html>

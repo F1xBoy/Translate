@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaTech AI Presentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* 1. СИСТЕМА ЦВЕТОВ И ТЕМ */
+        :root {
+            --bg-body: #010413;
+            --bg-slide: #050a24;
+            --bg-tile: #0c1235;
+            --text-main: #f1f5f9;
+            --text-sub: #94a3b8;
+            --primary: #2563eb; 
+            --accent: #8b5cf6; 
+            --border: rgba(59, 130, 246, 0.2);
+            --grad: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%);
+            --shadow: rgba(0, 0, 0, 0.8);
+        }
+
+        [data-theme="light"] {
+            --bg-body: #f8fafc;
+            --bg-slide: #ffffff;
+            --bg-tile: #f1f5f9;
+            --text-main: #0f172a;
+            --text-sub: #475569;
+            --primary: #2563eb;
+            --accent: #7c3aed;
+            --border: rgba(37, 99, 235, 0.1);
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+
+        body {
+            background-color: var(--bg-body);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            transition: background-color 0.4s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* 2. ИСПРАВЛЕННЫЙ ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ */
+        .theme-switch-wrapper {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            z-index: 1000;
+        }
+
+        .theme-switch {
+            width: 74px;
+            height: 38px;
+            background: var(--bg-tile);
+            border: 2px solid var(--border);
+            border-radius: 40px;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 10px 25px var(--shadow);
+            transition: 0.3s ease;
+            overflow: hidden; /* Теперь иконки не вылетают наружу */
+        }
+
+        /* Ползунок с иконкой внутри */
+        .switch-knob {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 28px;
+            height: 28px;
+            background: var(--grad);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+            z-index: 10;
+        }
+
+        .switch-knob i {
+            color: white;
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        /* Положение для светлой темы */
+        [data-theme="light"] .switch-knob {
+            transform: translateX(36px);
+        }
+
+        /* 3. СТИЛИ СЛАЙДОВ */
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            background-color: var(--bg-slide);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: absolute;
+            overflow: hidden;
+            color: var(--text-main);
+            box-shadow: 0 50px 100px var(--shadow);
+            transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            pointer-events: none;
+            visibility: hidden;
+        }
+
+        .slide-container.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            visibility: visible;
+        }
+
+        /* Декоративные свечения на фоне */
+        .slide-container::before {
+            content: ''; position: absolute; width: 1000px; height: 1000px;
+            background: radial-gradient(circle, #1e3a8a 0%, transparent 70%);
+            top: -450px; left: -350px; opacity: 0.3; z-index: 0;
+        }
+
+        .slide-container > * { position: relative; z-index: 1; }
+
+        h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 110px;
+            font-weight: 700;
+            background: var(--grad);
+            
+            /* Эти три строки делают текст прозрачным, проявляя градиент сзади */
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            letter-spacing: -4px;
+  line-height: 1.1;
+}
+
+        .slide-title { 
+            font-family: 'Poppins', sans-serif; font-size: 54px; font-weight: 700;
+            margin-bottom: 50px; display: flex; align-items: center; gap: 20px;
+        }
+        .slide-title::after { content: ''; flex-grow: 1; height: 2px; background: var(--grad); opacity: 0.3; }
+
+        p { font-size: 26px; color: var(--text-sub); line-height: 1.6; }
+
+        /* Сетка карточек */
+        .tile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; width: 100%; }
+        .tile { 
+            background: var(--bg-tile); border: 1px solid var(--border); border-radius: 20px;
+            padding: 40px; display: flex; gap: 25px; align-items: center; transition: 0.3s;
+        }
+        .tile:hover { transform: translateY(-10px); border-color: var(--primary); }
+        .tile i { 
+            font-size: 38px; color: var(--primary); background: rgba(37, 99, 235, 0.1);
+            width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;
+            border-radius: 18px; flex-shrink: 0;
+        }
+
+        /* Таблица сравнения */
+        .table-box { width: 100%; border-radius: 20px; overflow: hidden; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; background: var(--bg-tile); }
+        th { background: var(--grad); color: white; padding: 25px; font-size: 26px; text-align: left; }
+        td { padding: 22px 25px; border-bottom: 1px solid var(--border); font-size: 22px; }
+
+        /* Кнопка */
+        .btn-cta {
+            background: var(--grad); color: white; border: none;
+            padding: 24px 60px; border-radius: 16px; font-family: 'Poppins', sans-serif;
+            font-weight: 700; font-size: 26px; cursor: pointer;
+            box-shadow: 0 15px 40px rgba(37, 99, 235, 0.4); transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 2px; margin-top: 40px;
+        }
+        .btn-cta:hover { transform: scale(1.05); box-shadow: 0 20px 50px rgba(139, 92, 246, 0.5); }
+
+        /* Document Translation Slide */
+        .format-badges {
+            display: flex; justify-content: center; gap: 15px; margin: 50px 0; flex-wrap: wrap;
+        }
+        .format-badge {
+            display: flex; align-items: center; gap: 12px; padding: 14px 28px;
+            background-color: rgba(37, 99, 235, 0.05); border: 1px solid var(--border);
+            border-radius: 12px; font-size: 18px; font-weight: 600;
+            color: var(--text-main); transition: 0.3s;
+        }
+        .format-badge:hover {
+            border-color: var(--primary); background-color: rgba(37, 99, 235, 0.1); transform: translateY(-3px);
+        }
+        .format-badge i.fa-file-pdf { color: #ef4444; }
+        .format-badge i.fa-file-word { color: #3b82f6; }
+        .format-badge i.fa-file-excel { color: #22c55e; }
+        .format-badge i.fa-file-powerpoint { color: #f97316; }
+        .format-badge i.fa-code { color: #eab308; }
+
+        .drag-drop-zone {
+            border: 2px dashed rgba(59, 130, 246, 0.5); border-radius: 20px; padding: 50px;
+            text-align: center; transition: 0.3s; cursor: pointer;
+            background-color: transparent; max-width: 900px; margin: 0 auto; width: 100%;
+        }
+        .drag-drop-zone:hover {
+            background-color: rgba(37, 99, 235, 0.05); border-color: var(--primary);
+        }
+        .drag-drop-zone i {
+            font-size: 54px; color: var(--primary); margin-bottom: 20px; display: block;
+        }
+        .drag-drop-zone p { font-size: 20px; color: var(--text-main); font-weight: 500; }
+
+        /* Presentation Controls */
+        .presentation-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            z-index: 1000;
+        }
+        .progress-container {
+            width: 300px;
+            height: 6px;
+            background-color: var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--grad);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        .nav-hints {
+            font-size: 14px;
+            color: var(--text-sub);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* Футер без ссылок */
+        .footer-final { margin-top: 60px; font-size: 14px; opacity: 0.4; letter-spacing: 4px; font-weight: 700; }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <div class="theme-switch-wrapper">
+        <div class="theme-switch" onclick="toggleTheme()">
+            <div class="switch-knob">
+                <i class="fa-solid fa-moon" id="toggle-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide1">
+        <div style="text-align: center;">
+            <h1>LinguaTech</h1>
+            <p>Next-Generation AI Translation Platform for Texts and Documents</p>
+            <p style="margin-top: 20px; font-size: 22px; opacity: 0.6;">Precision. Structure. Context.</p>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide2">
+        <h2 class="slide-title">The Translation Gap</h2>
+        <div class="tile-grid">
+            <div class="tile">
+                <i class="fa-solid fa-file-pdf"></i>
+                <div>
+                    <h3 style="margin-bottom: 10px; font-size: 28px;">Format Loss</h3>
+                    <p style="font-size: 20px;">Most AI tools destroy original document layouts and styles.</p>
+                </div>
+            </div>
+            <div class="tile">
+                <i class="fa-solid fa-microchip"></i>
+                <div>
+                    <h3 style="margin-bottom: 10px; font-size: 28px;">Context Errors</h3>
+                    <p style="font-size: 20px;">Literal translations fail to capture complex technical nuances.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide-tech">
+        <h2 class="slide-title">Neural Context Engine</h2>
+        <div class="tile-grid">
+            <div class="tile">
+                <i class="fa-solid fa-brain"></i>
+                <div>
+                    <h3 style="margin-bottom: 10px; font-size: 28px;">Beyond Literal Translation</h3>
+                    <p style="font-size: 20px;">Our AI understands idioms, slang, and deep technical jargon across 50+ languages.</p>
+                </div>
+            </div>
+            <div class="tile">
+                <i class="fa-solid fa-network-wired"></i>
+                <div>
+                    <h3 style="margin-bottom: 10px; font-size: 28px;">Contextual Memory</h3>
+                    <p style="font-size: 20px;">Maintains coherence and terminology consistency throughout entire documents.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide-docs" style="align-items: center; text-align: center;">
+        <h2 style="font-family: 'Poppins', sans-serif; font-size: 64px; font-weight: 700; margin-bottom: 30px;">Professional Document Translation</h2>
+        <p style="font-size: 24px; max-width: 1000px; margin: 0 auto; line-height: 1.6; color: var(--text-sub);">
+            No more copy-pasting. Upload your complex files and get perfectly translated documents in seconds while preserving every image, table, and font.
+        </p>
+        
+        <div class="format-badges">
+            <div class="format-badge"><i class="fa-solid fa-file-pdf"></i> Adobe PDF</div>
+            <div class="format-badge"><i class="fa-solid fa-file-word"></i> MS Word</div>
+            <div class="format-badge"><i class="fa-solid fa-file-excel"></i> MS Excel</div>
+            <div class="format-badge"><i class="fa-solid fa-file-powerpoint"></i> MS PowerPoint</div>
+            <div class="format-badge"><i class="fa-solid fa-code"></i> JSON / XML</div>
+        </div>
+
+        <div class="drag-drop-zone">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <p>Drag & Drop your file here</p>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide-audio">
+        <h2 class="slide-title">Voice & TTS Integration</h2>
+        <div class="tile-grid">
+            <div class="tile">
+                <i class="fa-solid fa-headphones"></i>
+                <div>
+                    <h3 style="margin-bottom: 10px; font-size: 28px;">Natural Speech</h3>
+                    <p style="font-size: 20px;">Listen to translations with hyper-realistic, human-like voice synthesis.</p>
+                </div>
+            </div>
+            <div class="tile">
+                <i class="fa-solid fa-universal-access"></i>
+                <div>
+                    <h3 style="margin-bottom: 10px; font-size: 28px;">Enhanced Accessibility</h3>
+                    <p style="font-size: 20px;">Perfect for language learners and visually impaired users navigating complex texts.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide3">
+        <h2 class="slide-title">Market Superiority</h2>
+        <div class="table-box">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Competitors</th>
+                        <th>LinguaTech AI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Layout Integrity</td>
+                        <td>Broken / Stripped</td>
+                        <td><strong>100% Native Retention</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Contextual Logic</td>
+                        <td>Phrase-based</td>
+                        <td><strong>Neural LLM Analysis</strong></td>
+                    </tr>
+                    <tr>
+                        <td>Security</td>
+                        <td>Public Processing</td>
+                        <td><strong>Encrypted Private Cloud</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="slide-container" id="slide4">
+        <div style="text-align: center;">
+            <h2 style="font-size: 90px; margin-bottom: 20px;">LinguaTech</h2>
+            <p>Ready to break the language barrier?</p>
+            
+            <button class="btn-cta" onclick="window.location.href='http://127.0.0.1:5500/index.html'">Get Started</button>
+            
+            <div class="footer-final">
+                <p>ALL RIGHTS RESERVED. © 2026 LINGUATECH AI SYSTEMS.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="presentation-controls">
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="nav-hints">USE ARROWS &larr; &rarr; TO NAVIGATE</div>
+    </div>
+
+    <script>
+        // Presentation Logic
+        const slides = document.querySelectorAll('.slide-container');
+        const progressBar = document.getElementById('progress-bar');
+        let currentSlide = 0;
+
+        function showSlide(index) {
+            slides.forEach((slide, i) => {
+                if (i === index) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            const progress = ((index) / (slides.length - 1)) * 100;
+            if(progressBar) progressBar.style.width = `${progress}%`;
+        }
+
+        // Initialize first slide
+        showSlide(currentSlide);
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.code === 'Space') {
+                e.preventDefault();
+                if (currentSlide < slides.length - 1) {
+                    currentSlide++;
+                    showSlide(currentSlide);
+                }
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    showSlide(currentSlide);
+                }
+            }
+        });
+
+        // Функция переключения темы
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            const icon = document.getElementById('toggle-icon');
+            
+            body.setAttribute('data-theme', nextTheme);
+            
+            // Плавная смена иконки внутри ползунка
+            if (nextTheme === 'light') {
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+    </script>
+</body>
+</html>
