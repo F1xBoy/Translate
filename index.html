@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinguaTech AI Translator</title>
+    <title>Lingua Translator</title>
     <link class="favicon" rel="icon" type="image/jpeg" href="https://i.postimg.cc/RFQvzQpn/image-(1).png">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +13,6 @@
 </head>
 
 <body>
-    
     <div class="background-blobs">
         <div class="blob blob-1"></div>
         <div class="blob blob-2"></div>
@@ -40,13 +38,13 @@
                     </ul>
                 </div>
             </div>
-        <h1><i class="fa-solid fa-language"></i> LinguaTech AI Translator</h1>
+        <h1><i class="fa-solid fa-language"></i> Lingua Translator</h1>
             <p>Fast & accurate translation between multiple languages</p>
             <p id="supportedCount" class="supported-count"></p>
         </header>
 
         <div class="translator-card">
-            <div class="tabs">
+            <div class="tabs" id="tabsContainer">
                 <button class="tab-btn active" data-tab="text">Text <i class="fa-solid fa-align-left"></i></button>
                 <button class="tab-btn" data-tab="document">Document <i class="fa-solid fa-file-lines"></i></button>
                 <button class="tab-btn" data-tab="image">Images <i class="fa-solid fa-image"></i></button>
@@ -56,7 +54,7 @@
                 <div class="lang-selector">
                     <div class="custom-dropdown" id="sourceDropdown">
                         <div class="dropdown-header">
-                            <span class="selected-lang" data-value="ru">Russian</span>
+                            <span class="selected-lang" data-value="auto">Auto Detect</span>
                             <i class="fa-solid fa-chevron-down"></i>
                         </div>
                         <ul class="dropdown-list">
@@ -218,5 +216,4 @@
     </script>
     <script src="app.js"></script>
 </body>
-
 </html>

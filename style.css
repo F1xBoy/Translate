@@ -78,24 +78,24 @@
 }
 
 [data-theme="lucid-water"] {
-    --bg-color: #020c18;
-    --card-bg: rgba(0, 180, 220, 0.08);
-    --border-color: rgba(0, 230, 255, 0.35);
-    --text-primary: #e0f8ff;
-    --text-secondary: #67e8f9;
-    --accent-1: #00e5ff;
-    --accent-2: #0ea5e9;
-    --accent-hover: #38bdf8;
-    --error: #ff4d6d;
-    --input-bg: rgba(0, 180, 220, 0.06);
-    --dropdown-bg: rgba(2, 18, 35, 0.96);
-    --hover-bg: rgba(0, 230, 255, 0.1);
-    --active-bg: rgba(0, 230, 255, 0.2);
-    --file-area-bg: rgba(0, 180, 220, 0.05);
-    --file-info-bg: rgba(0, 180, 220, 0.1);
-    --btn-secondary: rgba(0, 230, 255, 0.1);
-    --btn-secondary-hover: rgba(0, 230, 255, 0.2);
-    --progress-bg: rgba(0, 230, 255, 0.15);
+    --bg-color: #0a192f;
+    --card-bg: rgba(10, 25, 47, 0.6);
+    --border-color: rgba(56, 189, 248, 0.2);
+    --text-primary: #e6f7ff;
+    --text-secondary: #7dd3fc;
+    --accent-1: #0ea5e9;
+    --accent-2: #0284c7;
+    --accent-hover: #0ea5e9;
+    --error: #f87171;
+    --input-bg: rgba(10, 25, 47, 0.4);
+    --dropdown-bg: rgba(10, 25, 47, 0.92);
+    --hover-bg: rgba(56, 189, 248, 0.08);
+    --active-bg: rgba(56, 189, 248, 0.15);
+    --file-area-bg: rgba(10, 25, 47, 0.3);
+    --file-info-bg: rgba(10, 25, 47, 0.5);
+    --btn-secondary: rgba(56, 189, 248, 0.08);
+    --btn-secondary-hover: rgba(56, 189, 248, 0.15);
+    --progress-bg: rgba(56, 189, 248, 0.12);
 }
 
 /* NEW THEMES */
@@ -186,7 +186,7 @@
 }
 
 body, .translator-card, .input-area, .output-area, textarea, .file-upload-area, .file-info, .download-area {
-    transition: background-color 0.6s cubic-bezier(0.22, 1, 0.36, 1), background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s ease, border-color 0.5s ease, box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: background-color 0.6s cubic-bezier(0.22, 1, 0.36, 1), background 0.6s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s ease, border-color 0.5s ease, box-shadow 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
 }
 
 body {
@@ -320,6 +320,7 @@ header p {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+    animation: fadeSlideUp 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 /* Controls */
@@ -370,7 +371,11 @@ header p {
 
 .dropdown-header i {
     font-size: 0.8rem;
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.4s ease;
+}
+
+.dropdown-header:hover i {
+    color: var(--accent-1);
 }
 
 .custom-dropdown.open .dropdown-header i {
@@ -419,20 +424,31 @@ header p {
     border-radius: 8px;
     cursor: pointer;
     color: var(--text-secondary);
-    transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.2s ease, opacity 0.2s ease;
     font-size: 0.95rem;
+    will-change: transform, opacity;
 }
 
 .dropdown-list li:hover {
     background: var(--hover-bg);
     color: var(--text-primary);
-    transform: translateX(4px);
+    transform: translateX(6px) scale(1.02);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.2s ease, opacity 0.2s ease;
 }
 
 .dropdown-list li.active {
     background: var(--active-bg);
     color: var(--accent-1);
     font-weight: 600;
+}
+
+/* NEW! badge for Lucid Water */
+#themeList li[data-value="lucid-water"]::after {
+    content: " NEW!";
+    color: #00e5ff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    vertical-align: super;
 }
 
 .swap-btn {
@@ -447,12 +463,15 @@ header p {
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    overflow: hidden;
+    will-change: transform, box-shadow;
 }
 
 .swap-btn:hover {
     background: rgba(99, 102, 241, 0.1);
-    transform: scale(1.15) rotate(180deg);
+    transform: scale(1.15);
     box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
 }
 
@@ -488,6 +507,7 @@ header p {
 }
 
 textarea {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease, transform 0.3s ease;
     width: 100%;
     height: 200px;
     background: transparent;
@@ -499,6 +519,7 @@ textarea {
     font-size: 1.1rem;
     line-height: 1.5;
     outline: none;
+    will-change: transform, opacity;
 }
 
 textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
@@ -519,7 +540,7 @@ textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
     color: var(--text-secondary);
     font-size: 1.1rem;
     cursor: pointer;
-    transition: color 0.2s ease;
+    transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
     padding: 0.5rem;
     border-radius: 8px;
 }
@@ -527,6 +548,7 @@ textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
 .icon-btn:hover {
     color: var(--text-primary);
     background: var(--hover-bg);
+    transform: scale(1.05);
 }
 
 .icon-btn.speaking { color: var(--accent-1); background: var(--active-bg); }
@@ -570,9 +592,8 @@ textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
     backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
     border: 1px solid var(--border-color); border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1); transition: all 0.3s ease;
+    animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
-
-.dictionary-container:not(.hidden) { animation: fadeSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
 .dict-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--text-primary); }
 .dict-header { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 1rem; }
@@ -610,18 +631,41 @@ textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
 .primary-btn:hover::before { left: 100%; }
 .primary-btn:active { transform: translateY(0px) scale(0.98); transition: all 0.1s ease; }
 
-.selected-lang { transition: opacity 0.2s ease, transform 0.2s ease; display: inline-block; }
-.selected-lang.fade { opacity: 0; transform: scale(0.95); }
+.selected-lang { transition: opacity 0.3s ease, transform 0.3s ease; display: inline-block; will-change: transform, opacity; }
+.selected-lang.fade { opacity: 0; transform: scale(0.95); transition: opacity 0.3s ease, transform 0.3s ease; }
 
 /* Tabs */
-.tabs { display: flex; gap: 1rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1.5rem; }
+.tabs {
+    display: flex;
+    gap: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    cursor: grab;
+}
+
+.tabs:active {
+    cursor: grabbing;
+}
 
 .tab-btn {
-    background: none; border: none; color: var(--text-secondary); font-size: 1.1rem;
-    font-family: 'Inter', sans-serif; font-weight: 600; padding: 0.75rem 1.5rem; cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: color 0.35s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.35s ease, background 0.35s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    display: flex; align-items: center; gap: 0.5rem; position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
 }
 
 .tab-btn:hover { color: var(--text-primary); transform: translateY(-1px); }
@@ -637,7 +681,13 @@ textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
     100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
 }
 
-.translator-card { transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+/* Theme Toggle – вращение иконки при наведении */
+.theme-toggle i {
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.theme-toggle:hover i {
+    transform: rotate(180deg);
+}
 
 /* ========== LUCID WATER THEME ========== */
 body[data-theme="lucid-water"] {
@@ -708,6 +758,7 @@ body[data-theme="lucid-water"] {
 
 [data-theme="lucid-water"] .input-area,
 [data-theme="lucid-water"] .output-area {
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease, transform 0.3s ease;
     background: linear-gradient(145deg, rgba(0, 150, 200, 0.08), rgba(0, 40, 90, 0.12));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -718,6 +769,7 @@ body[data-theme="lucid-water"] {
         0 8px 32px rgba(0, 0, 20, 0.4);
 }
 [data-theme="lucid-water"] .input-area:focus-within {
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease, border-color 0.4s ease;
     border-color: rgba(0, 230, 255, 0.6);
     box-shadow:
         inset 0 1px 0 rgba(0, 230, 255, 0.3),
@@ -773,25 +825,42 @@ body[data-theme="lucid-water"] {
 
 @keyframes liquid-wobble {
     0%   { transform: scale(1); }
-    20%  { transform: scale(1.12, 0.88); }
-    45%  { transform: scale(0.93, 1.08); }
-    70%  { transform: scale(1.05, 0.96); }
-    85%  { transform: scale(0.98, 1.02); }
-    100% { transform: scale(1.03, 1); }
+    15%  { transform: scale(1.08, 0.92); }
+    30%  { transform: scale(0.96, 1.04); }
+    45%  { transform: scale(1.04, 0.96); }
+    60%  { transform: scale(0.98, 1.02); }
+    75%  { transform: scale(1.02, 0.98); }
+    90%  { transform: scale(0.99, 1.01); }
+    100% { transform: scale(1); }
 }
 
-[data-theme="lucid-water"] .swap-btn:hover {
-    animation: liquid-wobble 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-    background: rgba(0, 230, 255, 0.15);
-    box-shadow: 0 0 20px rgba(0, 230, 255, 0.3);
+/* Swap button in Lucid Water – no infinite rotate, only subtle hover + same wobble */
+[data-theme="lucid-water"] .swap-btn {
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-[data-theme="lucid-water"] .icon-btn:hover {
-    animation: liquid-wobble 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+[data-theme="lucid-water"] .swap-btn:hover {
+    background: rgba(56, 189, 248, 0.2);
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+    transform: scale(1.1);
+    animation: liquid-wobble 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+[data-theme="lucid-water"] .swap-btn:not(:hover) {
+    animation: none;
+}
+
+/* Dropdown header hover – более плавный переход в Lucid Water */
+[data-theme="lucid-water"] .dropdown-header:hover {
+    transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Wobble effect for icon and secondary buttons – только в Lucid Water */
+[data-theme="lucid-water"] .icon-btn:hover,
+[data-theme="lucid-water"] .secondary-btn:hover {
+    animation: liquid-wobble 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     background: rgba(0, 230, 255, 0.1);
     color: #00e5ff;
 }
 [data-theme="lucid-water"] .secondary-btn:hover {
-    animation: liquid-wobble 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     background: rgba(0, 230, 255, 0.2);
     border-color: rgba(0, 230, 255, 0.5);
     box-shadow: 0 0 15px rgba(0, 230, 255, 0.2);

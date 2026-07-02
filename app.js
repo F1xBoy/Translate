@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabBtns = document.querySelectorAll('.tab-btn');
     const textTab = document.getElementById('textTab');
     const documentTab = document.getElementById('documentTab');
+    const imageTab = document.getElementById('imageTab');
 
     // File Elements
     const dropZone = document.getElementById('dropZone');
@@ -33,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadBtn = document.getElementById('downloadBtn');
 
     // Image Elements
-    const imageTab = document.getElementById('imageTab');
     const imageDropZone = document.getElementById('imageDropZone');
     const imageInput = document.getElementById('imageInput');
     const imageBrowseBtn = document.getElementById('imageBrowseBtn');
@@ -77,21 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         item.addEventListener('click', () => {
             const newTheme = item.dataset.value;
-            document.body.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-            
-            themeList.querySelectorAll('li').forEach(li => li.classList.remove('selected'));
-            item.classList.add('selected');
-            
-            themeDropdown.classList.remove('open');
-            
-            // Icon animation
-            themeIcon.style.transform = 'rotate(180deg) scale(0.5)';
-            themeIcon.style.opacity = '0';
-            setTimeout(() => {
-                themeIcon.style.transform = 'rotate(0deg) scale(1)';
-                themeIcon.style.opacity = '1';
-            }, 150);
+            // Перезагрузка страницы для предотвращения лагов
+            location.reload();
         });
     });
 
@@ -106,11 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMode = 'text'; 
     let currentFile = null;
     let currentImageFile = null;
-    let translatedFileContent = null;
     let currentObjectURL = null;
 
     const LANGUAGES = {
-        "af": "Afrikaans", "sq": "Albanian", "am": "Amharic", "ar": "Arabic", "hy": "Armenian", "as": "Assamese", "ay": "Aymara", "az": "Azerbaijani", "bm": "Bambara", "ba": "Bashkir", "eu": "Basque", "be": "Belarusian", "bn": "Bengali", "bho": "Bhojpuri", "bs": "Bosnian", "bg": "Bulgarian", "ca": "Catalan", "ceb": "Cebuano", "ny": "Chichewa", "zh-CN": "Chinese (Simp)", "zh-TW": "Chinese (Trad)", "cv": "Chuvash", "co": "Corsican", "hr": "Croatian", "cs": "Czech", "da": "Danish", "dv": "Dhivehi", "doi": "Dogri", "nl": "Dutch", "en": "English", "en-US": "English (US)", "en-GB": "English (UK)", "eo": "Esperanto", "et": "Estonian", "ee": "Ewe", "tl": "Filipino", "fi": "Finnish", "fr": "French", "fy": "Frisian", "gl": "Galician", "ka": "Georgian", "de": "German", "el": "Greek", "gn": "Guarani", "gu": "Gujarati", "ht": "Haitian Creole", "ha": "Hausa", "haw": "Hawaiian", "iw": "Hebrew", "hi": "Hindi", "hmn": "Hmong", "hu": "Hungarian", "is": "Icelandic", "ig": "Igbo", "ilo": "Ilocano", "id": "Indonesian", "ga": "Irish", "it": "Italian", "ja": "Japanese", "jw": "Javanese", "kn": "Kannada", "kk": "Kazakh", "km": "Khmer", "rw": "Kinyarwanda", "gom": "Konkani", "ko": "Korean", "kri": "Krio", "ku": "Kurdish (Kurmanji)", "ckb": "Kurdish (Sorani)", "ky": "Kyrgyz", "lo": "Lao", "la": "Latin", "lv": "Latvian", "ln": "Lingala", "lt": "Lithuanian", "lg": "Luganda", "lb": "Luxembourgish", "mk": "Macedonian", "mai": "Maithili", "mg": "Malagasy", "ms": "Malay", "ml": "Malayalam", "mt": "Maltese", "mi": "Maori", "mr": "Marathi", "mni": "Meiteilon (Manipuri)", "lus": "Mizo", "mn": "Mongolian", "my": "Myanmar (Burmese)", "ne": "Nepali", "no": "Norwegian", "or": "Odia (Oriya)", "om": "Oromo", "os": "Ossetian", "ps": "Pashto", "fa": "Persian", "pl": "Polish", "pt": "Portuguese", "pa": "Punjabi", "qu": "Quechua", "ro": "Romanian", "ru": "Russian", "sm": "Samoan", "sa": "Sanskrit", "gd": "Scots Gaelic", "nso": "Sepedi", "sr": "Serbian", "st": "Sesotho", "sn": "Shona", "sd": "Sindhi", "si": "Sinhala", "sk": "Slovak", "sl": "Slovenian", "so": "Somali", "es": "Spanish", "su": "Sundanese", "sw": "Swahili", "sv": "Swedish", "tg": "Tajik", "ta": "Tamil", "tt": "Tatar", "te": "Telugu", "th": "Thai", "ti": "Tigrinya", "ts": "Tsonga", "tr": "Turkish", "tk": "Turkmen", "ak": "Twi (Akan)", "uk": "Ukrainian", "ur": "Urdu", "ug": "Uyghur", "uz": "Uzbek", "vi": "Vietnamese", "cy": "Welsh", "xh": "Xhosa", "sah": "Yakut", "yi": "Yiddish", "yo": "Yoruba", "zu": "Zulu"
+        "af": "Afrikaans", "sq": "Albanian", "am": "Amharic", "ar": "Arabic", "hy": "Armenian", "as": "Assamese", "ay": "Aymara", "az": "Azerbaijani", "bm": "Bambara", "ba": "Bashkir", "eu": "Basque", "be": "Belarusian", "bn": "Bengali", "bho": "Bhojpuri", "bs": "Bosnian", "bg": "Bulgarian", "ca": "Catalan", "ceb": "Cebuano", "ny": "Chichewa", "zh-CN": "Chinese (Simp)", "zh-TW": "Chinese (Trad)", "cv": "Chuvash", "co": "Corsican", "hr": "Croatian", "cs": "Czech", "da": "Danish", "dv": "Dhivehi", "doi": "Dogri", "nl": "Dutch", "en": "English", "en-US": "English (US)", "en-GB": "English (UK)", "eo": "Esperanto", "et": "Estonian", "ee": "Ewe", "tl": "Filipino", "fi": "Finnish", "fr": "French", "fy": "Frisian", "gl": "Galician", "ka": "Georgian", "de": "German", "el": "Greek", "gn": "Guarani", "gu": "Gujarati", "ht": "Haitian Creole", "ha": "Hausa", "haw": "Hawaiian", "iw": "Hebrew", "hi": "Hindi", "hmn": "Hmong", "hu": "Hungarian", "is": "Icelandic", "ig": "Igbo", "ilo": "Ilocano", "id": "Indonesian", "ga": "Irish", "it": "Italian", "ja": "Japanese", "jw": "Javanese", "kn": "Kannada", "kk": "Kazakh", "km": "Khmer", "rw": "Kinyarwanda", "gom": "Konkani", "ko": "Korean", "kri": "Krio", "ku": "Kurdish (Kurmanji)", "ckb": "Kurdish (Sorani)", "ky": "Kyrgyz", "lo": "Lao", "la": "Latin", "lv": "Latvian", "ln": "Lingala", "lt": "Lithuanian", "lg": "Luganda", "lb": "Luxembourgish", "mk": "Macedonian", "mai": "Maithili", "mg": "Malagasy", "ms": "Malay", "ml": "Malayalam", "mt": "Maltese", "mi": "Maori", "mr": "Marathi", "mni": "Meiteilon (Manipuri)", "lus": "Mizo", "mn": "Mongolian", "my": "Myanmar (Burmese)", "ne": "Nepali", "no": "Norwegian", "or": "Odia (Oriya)", "om": "Oromo", "os": "Ossetian", "ps": "Pashto", "fa": "Persian", "pl": "Polish", "pt": "Portuguese", "pa": "Punjabi", "qu": "Quechua", "ro": "Romanian", "ru": "Russian", "sm": "Samoan", "sa": "Sanskrit", "gd": "Scots Gaelic", "nso": "Sepedi", "sr": "Serbian", "st": "Sesotho", "sn": "Shona", "sd": "Sindhi", "si": "Identity", "sk": "Slovak", "sl": "Slovenian", "so": "Somali", "es": "Spanish", "su": "Sundanese", "sw": "Swahili", "sv": "Swedish", "tg": "Tajik", "ta": "Tamil", "tt": "Tatar", "te": "Telugu", "th": "Thai", "ti": "Tigrinya", "ts": "Tsonga", "tr": "Turkish", "tk": "Turkmen", "ak": "Twi (Akan)", "uk": "Ukrainian", "ur": "Urdu", "ug": "Uyghur", "uz": "Uzbek", "vi": "Vietnamese", "cy": "Welsh", "xh": "Xhosa", "sah": "Yakut", "yi": "Yiddish", "yo": "Yoruba", "zu": "Zulu"
     };
 
     // Debounce Function
@@ -139,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         charCount.textContent = text.length;
         
-        // Auto-translate
         if (text.trim()) {
             debouncedTranslate();
         } else {
@@ -154,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         targetText.value = '';
         charCount.textContent = '0';
         sourceText.focus();
+        document.getElementById('dictionaryContainer').classList.add('hidden');
     });
 
     // Custom Dropdown Logic
@@ -205,7 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.classList.add('active');
 
                 dropdown.classList.remove('open');
-                updatePlaceholders();
+                // Placeholder больше не меняется, оставляем универсальный
+                if (sourceText.value.trim()) translateText();
             });
         });
     };
@@ -228,51 +216,84 @@ document.addEventListener('DOMContentLoaded', () => {
         const items = dropdown.querySelectorAll('.dropdown-list li');
         const targetItem = Array.from(items).find(i => i.getAttribute('data-value') === value);
         if (targetItem) {
-            selectedSpan.textContent = targetItem.textContent;
-            selectedSpan.setAttribute('data-value', value);
-            items.forEach(i => i.classList.remove('active'));
-            targetItem.classList.add('active');
+            selectedSpan.classList.add('fade');
+            
+            setTimeout(() => {
+                selectedSpan.textContent = targetItem.textContent;
+                selectedSpan.setAttribute('data-value', value);
+                items.forEach(i => i.classList.remove('active'));
+                targetItem.classList.add('active');
+                
+                setTimeout(() => selectedSpan.classList.remove('fade'), 300);
+            }, 150);
         }
     };
 
+    // Swap button
     swapBtn.addEventListener('click', () => {
         const sourceSpan = sourceDropdown.querySelector('.selected-lang');
         const targetSpan = targetDropdown.querySelector('.selected-lang');
 
-        swapBtn.style.transform = 'scale(1.1) rotate(180deg)';
-        setTimeout(() => swapBtn.style.transform = '', 300);
+        swapBtn.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        swapBtn.style.transform = 'rotate(180deg)';
+        swapBtn.addEventListener('transitionend', function handler() {
+            swapBtn.style.transition = 'none';
+            swapBtn.style.transform = 'rotate(0deg)';
+            swapBtn.removeEventListener('transitionend', handler);
+        });
 
         sourceSpan.classList.add('fade');
         targetSpan.classList.add('fade');
+        
+        sourceText.style.transition = 'opacity 0.4s ease, transform 0.3s ease';
+        targetText.style.transition = 'opacity 0.4s ease, transform 0.3s ease';
+        sourceText.style.opacity = '0.7';
+        targetText.style.opacity = '0.7';
+        sourceText.style.transform = 'scale(0.98)';
+        targetText.style.transform = 'scale(0.98)';
 
         setTimeout(() => {
             const tempSourceVal = getSourceLang();
             const tempTargetVal = getTargetLang();
 
-            setDropdownValue(sourceDropdown, tempTargetVal);
-            setDropdownValue(targetDropdown, tempSourceVal);
+            if (tempSourceVal === 'auto') {
+                setDropdownValue(sourceDropdown, tempTargetVal);
+                setDropdownValue(targetDropdown, 'en-US');
+            } else {
+                setDropdownValue(sourceDropdown, tempTargetVal);
+                setDropdownValue(targetDropdown, tempSourceVal);
+            }
 
             const tempText = sourceText.value;
             sourceText.value = targetText.value;
             targetText.value = tempText;
+            
+            setTimeout(() => {
+                sourceText.style.transition = 'opacity 0.5s ease, transform 0.4s ease';
+                targetText.style.transition = 'opacity 0.5s ease, transform 0.4s ease';
+                sourceText.style.opacity = '1';
+                targetText.style.opacity = '1';
+                
+                sourceText.style.transform = 'scale(1.02)';
+                targetText.style.transform = 'scale(1.02)';
+                
+                setTimeout(() => {
+                    sourceText.style.transform = 'scale(1)';
+                    targetText.style.transform = 'scale(1)';
+                }, 150);
+            }, 200);
 
-            updatePlaceholders();
             charCount.textContent = sourceText.value.length;
 
             sourceSpan.classList.remove('fade');
             targetSpan.classList.remove('fade');
+
+            if (sourceText.value.trim()) translateText();
         }, 200);
     });
 
-    const updatePlaceholders = () => {
-        const lang = getSourceLang();
-        if (lang === 'ru') sourceText.placeholder = 'Введите текст...';
-        else if (lang === 'uz') sourceText.placeholder = 'Matnni kiriting...';
-        else if (lang === 'auto') sourceText.placeholder = 'Type text to detect language...';
-        else sourceText.placeholder = 'Enter text...';
-    };
-
-    updatePlaceholders();
+    // Placeholder всегда один и тот же
+    sourceText.placeholder = 'Enter text...';
 
     copyBtn.addEventListener('click', async () => {
         if (!targetText.value) return;
@@ -322,31 +343,101 @@ document.addEventListener('DOMContentLoaded', () => {
         if (text) speak(text, getTargetLang(), listenTargetBtn);
     });
 
+    // Tab switching with slide animation
+    function switchTab(tabName) {
+        if (currentMode === tabName) return;
+        const direction = getDirection(currentMode, tabName);
+        
+        const oldContent = document.querySelector(`#${currentMode}Tab`);
+        const newContent = document.querySelector(`#${tabName}Tab`);
+        
+        if (!oldContent || !newContent) return;
+
+        const translateOut = direction === 'left' ? '-30px' : '30px';
+        const translateIn = direction === 'left' ? '30px' : '-30px';
+
+        oldContent.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        oldContent.style.opacity = '0';
+        oldContent.style.transform = `translateX(${translateOut})`;
+        
+        setTimeout(() => {
+            oldContent.classList.remove('active');
+            oldContent.style.display = 'none';
+            
+            newContent.style.display = 'block';
+            newContent.style.transition = 'none';
+            newContent.style.opacity = '0';
+            newContent.style.transform = `translateX(${translateIn})`;
+            void newContent.offsetWidth;
+            
+            newContent.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            newContent.style.opacity = '1';
+            newContent.style.transform = 'translateX(0)';
+            newContent.classList.add('active');
+        }, 300);
+
+        tabBtns.forEach(b => b.classList.remove('active'));
+        const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        currentMode = tabName;
+    }
+
+    function getDirection(from, to) {
+        const tabs = ['text', 'document', 'image'];
+        const fromIndex = tabs.indexOf(from);
+        const toIndex = tabs.indexOf(to);
+        return toIndex > fromIndex ? 'left' : 'right';
+    }
+
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            if (btn.classList.contains('active')) return; 
-
-            tabBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-
-            currentMode = btn.getAttribute('data-tab');
-
-            if (currentMode === 'text') {
-                documentTab.classList.remove('active');
-                imageTab.classList.remove('active');
-                textTab.classList.add('active');
-            } else if (currentMode === 'document') {
-                textTab.classList.remove('active');
-                imageTab.classList.remove('active');
-                documentTab.classList.add('active');
-            } else if (currentMode === 'image') {
-                textTab.classList.remove('active');
-                documentTab.classList.remove('active');
-                imageTab.classList.add('active');
-            }
+            switchTab(btn.getAttribute('data-tab'));
         });
     });
 
+    // Drag‑to‑scroll для панели вкладок
+    const tabsContainer = document.getElementById('tabsContainer');
+    let isDown = false, startX, scrollLeft;
+
+    tabsContainer.addEventListener('mousedown', (e) => {
+        isDown = true;
+        tabsContainer.style.cursor = 'grabbing';
+        startX = e.pageX - tabsContainer.offsetLeft;
+        scrollLeft = tabsContainer.scrollLeft;
+    });
+
+    tabsContainer.addEventListener('mouseleave', () => {
+        isDown = false;
+        tabsContainer.style.cursor = 'grab';
+    });
+
+    tabsContainer.addEventListener('mouseup', () => {
+        isDown = false;
+        tabsContainer.style.cursor = 'grab';
+    });
+
+    tabsContainer.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - tabsContainer.offsetLeft;
+        const walk = (x - startX) * 2;
+        tabsContainer.scrollLeft = scrollLeft - walk;
+    });
+
+    // Touch‑drag для мобильных
+    tabsContainer.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        scrollLeft = tabsContainer.scrollLeft;
+    });
+
+    tabsContainer.addEventListener('touchmove', (e) => {
+        const x = e.touches[0].clientX;
+        const walk = (x - startX) * 2;
+        tabsContainer.scrollLeft = scrollLeft - walk;
+    });
+
+    // File and image upload handlers
     browseBtn.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', (e) => {
@@ -458,6 +549,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(file);
     };
 
+    // Перевод текста (словарь всегда показывается)
     const translateText = async () => {
         const text = sourceText.value.trim();
         if (!text) {
@@ -468,16 +560,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const sourceLang = getSourceLang();
         const targetLang = getTargetLang();
 
-        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&dt=bd`;
+        const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&dt=bd&q=${encodeURIComponent(text)}`;
 
         loadingOverlay.classList.add('active');
 
         try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: `q=${encodeURIComponent(text)}`
-            });
+            const response = await fetch(url);
             const data = await response.json();
 
             const dictionaryContainer = document.getElementById('dictionaryContainer');
@@ -501,25 +589,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const term = termData[0];
                                 const reverseTranslations = termData[1] || [];
                                 
-                                const lowerText = text.toLowerCase();
-                                const isRelevant = reverseTranslations.some(rt => rt.toLowerCase() === lowerText);
-                                
-                                const blacklist = ['cock', 'dick', 'pussy']; 
-                                if (blacklist.includes(term.toLowerCase()) && lowerText !== term.toLowerCase()) return;
-
-                                if (isRelevant) {
-                                    dictHTML += `
-                                    <div class="dict-entry">
-                                        <div class="dict-number">${entryIndex}</div>
-                                        <div class="dict-content">
-                                            <div class="dict-terms">
-                                                <span class="dict-term">${term}</span>
-                                            </div>
-                                            <div class="dict-reverse">${reverseTranslations.join(', ')}</div>
+                                dictHTML += `
+                                <div class="dict-entry">
+                                    <div class="dict-number">${entryIndex}</div>
+                                    <div class="dict-content">
+                                        <div class="dict-terms">
+                                            <span class="dict-term">${term}</span>
                                         </div>
-                                    </div>`;
-                                    entryIndex++;
-                                }
+                                        <div class="dict-reverse">${reverseTranslations.join(', ')}</div>
+                                    </div>
+                                </div>`;
+                                entryIndex++;
                             });
                         }
                     });
@@ -529,8 +609,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         dictHeader.innerHTML = `<span class="dict-word">${text.toLowerCase()}</span> <span class="dict-pos">${partOfSpeech}</span>`;
                         dictEntries.innerHTML = dictHTML;
                         
-                        dictionaryContainer.classList.add('hidden');
-                        void dictionaryContainer.offsetWidth; 
                         dictionaryContainer.classList.remove('hidden');
                     } else {
                         dictionaryContainer.classList.add('hidden');
@@ -553,6 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Перевод документов (GET‑запросы, полностью рабочий)
     const translateDocument = async () => {
         if (!currentFile) {
             alert('Please select a file to translate.');
@@ -605,17 +684,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             progressText.textContent = `Translating ${chunks.length} chunks...`;
             
-            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t`;
             const translatedChunks = new Array(chunks.length);
             let completedChunks = 0;
             
             const translateChunk = async (chunk, index) => {
                 try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: `q=${encodeURIComponent(chunk)}`
-                    });
+                    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(chunk)}`;
+                    const response = await fetch(url);
                     const data = await response.json();
                     if (data && data[0]) {
                         translatedChunks[index] = data[0].map(c => c[0] || '').join('');
@@ -718,6 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Перевод изображений (полностью рабочий, с бесшовным удалением фона)
     const translateImage = async () => {
         if (!currentImageFile) return;
 
@@ -729,13 +805,12 @@ document.addEventListener('DOMContentLoaded', () => {
         imageProgressFill.style.width = '0%';
         imageProgressText.textContent = 'Scanning image...';
 
-        // Вспомогательная функция: средний цвет текстовых пикселей в прямоугольнике
         const getAverageTextColor = (imgData, maskData, xStart, yStart, xEnd, yEnd, natW, natH) => {
             let sumR = 0, sumG = 0, sumB = 0, count = 0;
             for (let py = Math.max(0, Math.floor(yStart)); py < Math.min(natH, Math.ceil(yEnd)); py++) {
                 for (let px = Math.max(0, Math.floor(xStart)); px < Math.min(natW, Math.ceil(xEnd)); px++) {
                     const idx = (py * natW + px) * 4;
-                    if (maskData.data[idx] < 128) { // текстовый пиксель
+                    if (maskData.data[idx] < 128) { 
                         sumR += imgData.data[idx];
                         sumG += imgData.data[idx+1];
                         sumB += imgData.data[idx+2];
@@ -747,14 +822,137 @@ document.addEventListener('DOMContentLoaded', () => {
             return `rgb(${Math.round(sumR/count)}, ${Math.round(sumG/count)}, ${Math.round(sumB/count)})`;
         };
 
-        // Функция определения оптимальной жирности на основе плотности текста
         const matchFontWeight = (fillRatio) => {
             if (fillRatio > 0.38) return 900;
             if (fillRatio > 0.34) return 800;
-            if (fillRatio > 0.30) return 700; // bold
+            if (fillRatio > 0.30) return 700; 
             if (fillRatio > 0.26) return 600;
             if (fillRatio > 0.22) return 500;
-            return 400; // normal
+            return 400; 
+        };
+
+        const clearTextBackground = (x0, y0, x1, y1) => {
+            const erasePad = 2;
+            const ex0 = Math.max(0, Math.floor(x0) - erasePad);
+            const ey0 = Math.max(0, Math.floor(y0) - erasePad);
+            const ex1 = Math.min(naturalWidth, Math.ceil(x1) + erasePad);
+            const ey1 = Math.min(naturalHeight, Math.ceil(y1) + erasePad);
+
+            const regionWidth = ex1 - ex0;
+            const regionHeight = ey1 - ey0;
+
+            if (regionWidth <= 0 || regionHeight <= 0) return [0,0,0];
+
+            const regionImageData = ctx.getImageData(ex0, ey0, regionWidth, regionHeight);
+            const regionData = regionImageData.data;
+
+            function sampleCornerColor(cx, cy, radius = 3) {
+                let r = 0, g = 0, b = 0, count = 0;
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const sx = cx + dx;
+                        const sy = cy + dy;
+                        if (sx < ex0 || sx >= ex1 || sy < ey0 || sy >= ey1) continue;
+                        const idx = (sy * naturalWidth + sx) * 4;
+                        if (bwImageData.data[idx] < 128) continue;
+                        r += originalImageData.data[idx];
+                        g += originalImageData.data[idx+1];
+                        b += originalImageData.data[idx+2];
+                        count++;
+                    }
+                }
+                return count > 0 ? [Math.round(r/count), Math.round(g/count), Math.round(b/count)] : null;
+            }
+
+            const tl = sampleCornerColor(ex0, ey0) || [0,0,0];
+            const tr = sampleCornerColor(ex1-1, ey0) || [0,0,0];
+            const bl = sampleCornerColor(ex0, ey1-1) || [0,0,0];
+            const br = sampleCornerColor(ex1-1, ey1-1) || [0,0,0];
+
+            if (regionWidth <= 1 || regionHeight <= 1) {
+                const avgColor = [
+                    Math.round((tl[0]+tr[0]+bl[0]+br[0])/4),
+                    Math.round((tl[1]+tr[1]+bl[1]+br[1])/4),
+                    Math.round((tl[2]+tr[2]+bl[2]+br[2])/4)
+                ];
+                for (let y = 0; y < regionHeight; y++) {
+                    const py = ey0 + y;
+                    for (let x = 0; x < regionWidth; x++) {
+                        const px = ex0 + x;
+                        let shouldErase = false;
+                        const minCheckX = Math.max(ex0, px - erasePad);
+                        const maxCheckX = Math.min(ex1 - 1, px + erasePad);
+                        const minCheckY = Math.max(ey0, py - erasePad);
+                        const maxCheckY = Math.min(ey1 - 1, py + erasePad);
+                        for (let cy = minCheckY; cy <= maxCheckY && !shouldErase; cy++) {
+                            for (let cx = minCheckX; cx <= maxCheckX && !shouldErase; cx++) {
+                                const maskIdx = (cy * naturalWidth + cx) * 4;
+                                if (bwImageData.data[maskIdx] < 128) shouldErase = true;
+                            }
+                        }
+                        if (shouldErase) {
+                            const idx = (y * regionWidth + x) * 4;
+                            regionData[idx] = avgColor[0];
+                            regionData[idx+1] = avgColor[1];
+                            regionData[idx+2] = avgColor[2];
+                            regionData[idx+3] = 255;
+                        }
+                    }
+                }
+                ctx.putImageData(regionImageData, ex0, ey0);
+                return avgColor;
+            }
+
+            for (let y = 0; y < regionHeight; y++) {
+                const py = ey0 + y;
+                const fy = y / (regionHeight - 1);
+                for (let x = 0; x < regionWidth; x++) {
+                    const px = ex0 + x;
+                    const fx = x / (regionWidth - 1);
+                    
+                    const r = Math.round(
+                        (1 - fx) * (1 - fy) * tl[0] +
+                        fx * (1 - fy) * tr[0] +
+                        (1 - fx) * fy * bl[0] +
+                        fx * fy * br[0]
+                    );
+                    const g = Math.round(
+                        (1 - fx) * (1 - fy) * tl[1] +
+                        fx * (1 - fy) * tr[1] +
+                        (1 - fx) * fy * bl[1] +
+                        fx * fy * br[1]
+                    );
+                    const b = Math.round(
+                        (1 - fx) * (1 - fy) * tl[2] +
+                        fx * (1 - fy) * tr[2] +
+                        (1 - fx) * fy * bl[2] +
+                        fx * fy * br[2]
+                    );
+
+                    let shouldErase = false;
+                    const minCheckX = Math.max(ex0, px - erasePad);
+                    const maxCheckX = Math.min(ex1 - 1, px + erasePad);
+                    const minCheckY = Math.max(ey0, py - erasePad);
+                    const maxCheckY = Math.min(ey1 - 1, py + erasePad);
+                    for (let cy = minCheckY; cy <= maxCheckY && !shouldErase; cy++) {
+                        for (let cx = minCheckX; cx <= maxCheckX && !shouldErase; cx++) {
+                            const maskIdx = (cy * naturalWidth + cx) * 4;
+                            if (bwImageData.data[maskIdx] < 128) shouldErase = true;
+                        }
+                    }
+
+                    if (shouldErase) {
+                        const idx = (y * regionWidth + x) * 4;
+                        regionData[idx] = r;
+                        regionData[idx+1] = g;
+                        regionData[idx+2] = b;
+                        regionData[idx+3] = 255;
+                    }
+                }
+            }
+
+            ctx.putImageData(regionImageData, ex0, ey0);
+            return tl;
         };
 
         try {
@@ -766,7 +964,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const originalDataUrl = imagePreview.src;
 
-            // Бинаризация для Tesseract с авто-инверсией при тёмном фоне
             imageProgressText.textContent = 'Preprocessing image...';
             const bwDataUrl = await new Promise((resolve) => {
                 const srcImg = new Image();
@@ -812,7 +1009,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     c.putImageData(imgData, 0, 0);
 
-                    // Если чёрных пикселей > 50% — инверсия (тёмный фон)
                     let blackPixels = 0;
                     for (let i = 0; i < pix.length; i += 4) {
                         if (pix[i] === 0) blackPixels++;
@@ -851,7 +1047,6 @@ document.addEventListener('DOMContentLoaded', () => {
             imageProgressFill.style.width = '0%';
             imageProgressText.textContent = 'Filtering text...';
 
-            // Загружаем бинарное изображение (ч/б) и оригинал
             const bwImg = new Image();
             bwImg.src = bwDataUrl;
             await new Promise(r => bwImg.onload = r);
@@ -876,29 +1071,26 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.drawImage(img, 0, 0);
             const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
 
-            // Фильтрация слов
             const validWords = [];
             words.forEach(word => {
                 const text = word.text.trim();
                 if (text.length === 0) return;
                 
-                // Allow simple numbers if they have decent confidence
                 const isOnlyNoise = /^[\W_]+$/u.test(text);
                 if (isOnlyNoise) return;
                 
                 const letterCount = (text.match(/\p{L}/gu) || []).length;
                 const digitCount = (text.match(/\d/g) || []).length;
                 
-                // Need at least 1 letter or digit to be considered valid text
                 if (letterCount < 1 && digitCount < 1) return;
                 
                 const conf = word.confidence || 0;
-                if (conf < 25) return; // Lowered from 50
+                if (conf < 25) return;
                 
                 const { x0, y0, x1, y1 } = word.bbox;
                 const bw = Math.max(x1 - x0, 1);
                 const bh = Math.max(y1 - y0, 1);
-                if (bh < 5 || bw < 5) return; // Lowered from 8/10
+                if (bh < 5 || bw < 5) return;
 
                 const bwPixels = bwCtx.getImageData(
                     Math.max(x0, 0), Math.max(y0, 0),
@@ -924,14 +1116,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             imageProgressText.textContent = 'Translating text...';
-            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t`;
             const textToTranslate = validWords.map(v => v.text).join('\n');
+            
             try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: `q=${encodeURIComponent(textToTranslate)}`
-                });
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(textToTranslate)}`;
+                const response = await fetch(url);
                 const data = await response.json();
                 if (data && data[0]) {
                     const fullTranslatedText = data[0].map(c => c[0] || '').join('');
@@ -951,102 +1140,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Обработка каждого слова
             validWords.forEach((item) => {
                 const { x0, y0, x1, y1 } = item.bbox;
                 const boxWidth = x1 - x0;
                 const boxHeight = y1 - y0;
 
-                // --- Умное стирание с восстановлением градиента ---
-                const erasePad = 2;
-                const ex0 = Math.max(0, Math.floor(x0) - erasePad);
-                const ey0 = Math.max(0, Math.floor(y0) - erasePad);
-                const ex1 = Math.min(naturalWidth, Math.ceil(x1) + erasePad);
-                const ey1 = Math.min(naturalHeight, Math.ceil(y1) + erasePad);
+                const cornerColor = clearTextBackground(x0, y0, x1, y1);
 
-                const regionImageData = ctx.getImageData(ex0, ey0, ex1 - ex0, ey1 - ey0);
-                const regionData = regionImageData.data;
-                const regionWidth = ex1 - ex0;
-                const regionHeight = ey1 - ey0;
-
-                // Собираем цвета фона по углам расширенной области (не текстовые пиксели)
-                function sampleCornerColor(cx, cy, radius = 3) {
-                    let r = 0, g = 0, b = 0, count = 0;
-                    for (let dy = -radius; dy <= radius; dy++) {
-                        for (let dx = -radius; dx <= radius; dx++) {
-                            const sx = cx + dx;
-                            const sy = cy + dy;
-                            if (sx < ex0 || sx >= ex1 || sy < ey0 || sy >= ey1) continue;
-                            const idx = (sy * naturalWidth + sx) * 4;
-                            if (bwImageData.data[idx] < 128) continue; // не текст
-                            r += originalImageData.data[idx];
-                            g += originalImageData.data[idx+1];
-                            b += originalImageData.data[idx+2];
-                            count++;
-                        }
-                    }
-                    return count > 0 ? [Math.round(r/count), Math.round(g/count), Math.round(b/count)] : null;
-                }
-
-                const tl = sampleCornerColor(ex0, ey0) || [0,0,0];
-                const tr = sampleCornerColor(ex1-1, ey0) || [0,0,0];
-                const bl = sampleCornerColor(ex0, ey1-1) || [0,0,0];
-                const br = sampleCornerColor(ex1-1, ey1-1) || [0,0,0];
-
-                // Билинейная интерполяция для каждой точки региона
-                for (let y = 0; y < regionHeight; y++) {
-                    const py = ey0 + y;
-                    const fy = y / (regionHeight - 1); // 0..1
-                    for (let x = 0; x < regionWidth; x++) {
-                        const px = ex0 + x;
-                        const fx = x / (regionWidth - 1); // 0..1
-                        
-                        // Интерполяция цветов углов
-                        const r = Math.round(
-                            (1 - fx) * (1 - fy) * tl[0] +
-                            fx * (1 - fy) * tr[0] +
-                            (1 - fx) * fy * bl[0] +
-                            fx * fy * br[0]
-                        );
-                        const g = Math.round(
-                            (1 - fx) * (1 - fy) * tl[1] +
-                            fx * (1 - fy) * tr[1] +
-                            (1 - fx) * fy * bl[1] +
-                            fx * fy * br[1]
-                        );
-                        const b = Math.round(
-                            (1 - fx) * (1 - fy) * tl[2] +
-                            fx * (1 - fy) * tr[2] +
-                            (1 - fx) * fy * bl[2] +
-                            fx * fy * br[2]
-                        );
-
-                        // Проверяем, нужно ли стирать этот пиксель (находится ли он рядом с текстом)
-                        let shouldErase = false;
-                        const minCheckX = Math.max(ex0, px - erasePad);
-                        const maxCheckX = Math.min(ex1 - 1, px + erasePad);
-                        const minCheckY = Math.max(ey0, py - erasePad);
-                        const maxCheckY = Math.min(ey1 - 1, py + erasePad);
-                        for (let cy = minCheckY; cy <= maxCheckY && !shouldErase; cy++) {
-                            for (let cx = minCheckX; cx <= maxCheckX && !shouldErase; cx++) {
-                                const maskIdx = (cy * naturalWidth + cx) * 4;
-                                if (bwImageData.data[maskIdx] < 128) shouldErase = true;
-                            }
-                        }
-
-                        if (shouldErase) {
-                            const idx = (y * regionWidth + x) * 4;
-                            regionData[idx] = r;
-                            regionData[idx+1] = g;
-                            regionData[idx+2] = b;
-                            regionData[idx+3] = 255;
-                        }
-                    }
-                }
-
-                ctx.putImageData(regionImageData, ex0, ey0);
-
-                // --- Анализ высоты и жирности ---
                 const startY = Math.max(0, Math.floor(y0));
                 const endY = Math.min(naturalHeight, Math.ceil(y1));
                 let topTextRow = null, bottomTextRow = null;
@@ -1073,9 +1173,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 const textFillRatio = totalPixels > 0 ? textPixels / totalPixels : 0;
-                const fontWeight = matchFontWeight(textFillRatio); // число от 400 до 900
+                const fontWeight = matchFontWeight(textFillRatio);
 
-                // Размер шрифта
                 let fontSize = Math.floor(realTextHeight);
                 fontSize = Math.max(fontSize, 8);
                 ctx.font = `${fontWeight} ${fontSize}px Arial`;
@@ -1086,7 +1185,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     textWidth = ctx.measureText(item.translatedText).width;
                 }
 
-                // --- Градиент цвета текста ---
                 const leftPartWidth = Math.min(boxWidth * 0.25, 10);
                 const rightPartWidth = leftPartWidth;
 
@@ -1101,9 +1199,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 gradient.addColorStop(1, colorRight);
                 ctx.fillStyle = gradient;
 
-                // --- Адаптивная тень для объёма ---
-                const bgRgb = tl; // используем верхний левый угол для яркости фона
-                const bgLuminance = (0.299 * bgRgb[0] + 0.587 * bgRgb[1] + 0.114 * bgRgb[2]) / 255;
+                const [bgR, bgG, bgB] = cornerColor || [128,128,128];
+                const bgLuminance = (0.299 * bgR + 0.587 * bgG + 0.114 * bgB) / 255;
                 let shadowColor, shadowBlur;
                 if (bgLuminance > 0.6) {
                     shadowColor = 'rgba(0, 0, 0, 0.25)';
@@ -1121,7 +1218,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.textBaseline = 'middle';
                 ctx.fillText(item.translatedText, x0 + 1, y0 + boxHeight / 2, boxWidth - 2);
 
-                // Сброс тени
                 ctx.shadowColor = 'transparent';
                 ctx.shadowBlur = 0;
                 ctx.shadowOffsetX = 0;
@@ -1156,6 +1252,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Инициализация эффектов Lucid Water
+    function initLucidWaterEffects() {
+        const isLucidWater = document.body.getAttribute('data-theme') === 'lucid-water';
+        if (!isLucidWater) return;
+
+        document.querySelectorAll('.icon-btn, .secondary-btn, .swap-btn').forEach(btn => {
+            btn.removeEventListener('mouseenter', handleMouseEnter);
+            btn.addEventListener('mouseenter', handleMouseEnter);
+        });
+    }
+
+    function removeLucidWaterEffects() {
+        document.querySelectorAll('.icon-btn, .secondary-btn, .swap-btn').forEach(btn => {
+            btn.removeEventListener('mouseenter', handleMouseEnter);
+            btn.style.animation = '';
+        });
+    }
+
+    function handleMouseEnter() {
+        this.style.animation = 'liquid-wobble 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+        this.addEventListener('animationend', function handler() {
+            this.style.animation = '';
+            this.removeEventListener('animationend', handler);
+        });
+    }
+
+    initLucidWaterEffects();
+
+    // Обработчики для изображений (Original/Translated)
     viewOriginalBtn.addEventListener('click', () => {
         if (imagePreview.dataset.originalSrc) {
             imagePreview.src = imagePreview.dataset.originalSrc;
