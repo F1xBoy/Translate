@@ -77,6 +77,27 @@
     --progress-bg: rgba(251, 146, 60, 0.15);
 }
 
+[data-theme="lucid-water"] {
+    --bg-color: #020c18;
+    --card-bg: rgba(0, 180, 220, 0.08);
+    --border-color: rgba(0, 230, 255, 0.35);
+    --text-primary: #e0f8ff;
+    --text-secondary: #67e8f9;
+    --accent-1: #00e5ff;
+    --accent-2: #0ea5e9;
+    --accent-hover: #38bdf8;
+    --error: #ff4d6d;
+    --input-bg: rgba(0, 180, 220, 0.06);
+    --dropdown-bg: rgba(2, 18, 35, 0.96);
+    --hover-bg: rgba(0, 230, 255, 0.1);
+    --active-bg: rgba(0, 230, 255, 0.2);
+    --file-area-bg: rgba(0, 180, 220, 0.05);
+    --file-info-bg: rgba(0, 180, 220, 0.1);
+    --btn-secondary: rgba(0, 230, 255, 0.1);
+    --btn-secondary-hover: rgba(0, 230, 255, 0.2);
+    --progress-bg: rgba(0, 230, 255, 0.15);
+}
+
 /* NEW THEMES */
 [data-theme="ocean"] {
     --bg-color: #0a192f;
@@ -223,6 +244,12 @@ body {
 [data-theme="cyberpunk"] .blob-2 { background: radial-gradient(circle, rgba(250, 204, 21, 0.4) 0%, rgba(250, 204, 21, 0) 70%); }
 [data-theme="sunset"] .blob-1 { background: radial-gradient(circle, rgba(249, 115, 22, 0.5) 0%, rgba(249, 115, 22, 0) 70%); }
 [data-theme="sunset"] .blob-2 { background: radial-gradient(circle, rgba(225, 29, 72, 0.5) 0%, rgba(225, 29, 72, 0) 70%); }
+[data-theme="lucid-water"] .blob-1 {
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.5) 0%, rgba(56, 189, 248, 0) 70%);
+}
+[data-theme="lucid-water"] .blob-2 {
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.5) 0%, rgba(14, 165, 233, 0) 70%);
+}
 [data-theme="ocean"] .blob-1 { background: radial-gradient(circle, rgba(100, 255, 218, 0.4) 0%, rgba(100, 255, 218, 0) 70%); }
 [data-theme="ocean"] .blob-2 { background: radial-gradient(circle, rgba(0, 119, 182, 0.4) 0%, rgba(0, 119, 182, 0) 70%); }
 [data-theme="forest"] .blob-1 { background: radial-gradient(circle, rgba(34, 197, 94, 0.4) 0%, rgba(34, 197, 94, 0) 70%); }
@@ -612,6 +639,215 @@ textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
 
 .translator-card { transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
 
+/* ========== LUCID WATER THEME ========== */
+body[data-theme="lucid-water"] {
+    background: #020c18;
+    background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(0, 160, 210, 0.18) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(0, 80, 160, 0.22) 0%, transparent 55%),
+        radial-gradient(ellipse at 60% 90%, rgba(0, 200, 255, 0.12) 0%, transparent 50%);
+    background-size: 200% 200%;
+    animation: lw-bg-shift 18s ease-in-out infinite alternate;
+}
+
+@keyframes lw-bg-shift {
+    0%   { background-position: 0% 0%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 30% 100%; }
+}
+
+[data-theme="lucid-water"] .blob-1 {
+    background: radial-gradient(circle, rgba(0, 220, 255, 0.35) 0%, transparent 70%) !important;
+    animation: lw-blob1 10s ease-in-out infinite alternate !important;
+    filter: blur(70px) !important;
+    opacity: 0.8 !important;
+}
+[data-theme="lucid-water"] .blob-2 {
+    background: radial-gradient(circle, rgba(0, 80, 200, 0.4) 0%, transparent 70%) !important;
+    animation: lw-blob2 14s ease-in-out infinite alternate !important;
+    filter: blur(90px) !important;
+    opacity: 0.7 !important;
+}
+
+@keyframes lw-blob1 {
+    0%   { border-radius: 40% 60% 60% 40% / 50% 40% 60% 50%; transform: translate(0, 0) scale(1); }
+    33%  { border-radius: 70% 30% 40% 60% / 60% 70% 30% 40%; transform: translate(20px, -30px) scale(1.08); }
+    66%  { border-radius: 30% 70% 70% 30% / 40% 30% 70% 60%; transform: translate(-15px, 20px) scale(0.95); }
+    100% { border-radius: 55% 45% 50% 50% / 45% 55% 45% 55%; transform: translate(10px, -10px) scale(1.05); }
+}
+@keyframes lw-blob2 {
+    0%   { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; transform: translate(0, 0) scale(1); }
+    50%  { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; transform: translate(-25px, 15px) scale(1.1); }
+    100% { border-radius: 50% 50% 40% 60% / 55% 45% 55% 45%; transform: translate(15px, -20px) scale(0.92); }
+}
+
+/* Cards - deep glass effect with cyan neon glow */
+[data-theme="lucid-water"] .translator-card {
+    background: linear-gradient(145deg, rgba(0, 180, 230, 0.1), rgba(0, 60, 120, 0.15));
+    backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+    -webkit-backdrop-filter: blur(40px) saturate(180%) brightness(1.1);
+    border: 1px solid rgba(0, 230, 255, 0.4);
+    border-radius: 32px;
+    box-shadow:
+        0 0 0 1px rgba(0, 230, 255, 0.15),
+        0 30px 60px rgba(0, 0, 30, 0.6),
+        0 0 40px rgba(0, 200, 255, 0.08),
+        inset 0 1px 0 rgba(0, 230, 255, 0.3),
+        inset 0 -1px 0 rgba(0, 100, 180, 0.2);
+    transition: box-shadow 0.5s ease, transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+[data-theme="lucid-water"] .translator-card:hover {
+    box-shadow:
+        0 0 0 1px rgba(0, 230, 255, 0.5),
+        0 35px 70px rgba(0, 0, 30, 0.7),
+        0 0 80px rgba(0, 200, 255, 0.18),
+        inset 0 1px 0 rgba(0, 230, 255, 0.5),
+        inset 0 -1px 0 rgba(0, 100, 180, 0.3);
+    transform: translateY(-4px);
+}
+
+[data-theme="lucid-water"] .input-area,
+[data-theme="lucid-water"] .output-area {
+    background: linear-gradient(145deg, rgba(0, 150, 200, 0.08), rgba(0, 40, 90, 0.12));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 230, 255, 0.2);
+    border-radius: 22px;
+    box-shadow:
+        inset 0 1px 0 rgba(0, 230, 255, 0.15),
+        0 8px 32px rgba(0, 0, 20, 0.4);
+}
+[data-theme="lucid-water"] .input-area:focus-within {
+    border-color: rgba(0, 230, 255, 0.6);
+    box-shadow:
+        inset 0 1px 0 rgba(0, 230, 255, 0.3),
+        0 0 0 3px rgba(0, 230, 255, 0.1),
+        0 0 30px rgba(0, 200, 255, 0.15);
+}
+
+[data-theme="lucid-water"] .file-upload-area,
+[data-theme="lucid-water"] .dictionary-container,
+[data-theme="lucid-water"] .image-text-sidebar {
+    background: linear-gradient(145deg, rgba(0, 150, 200, 0.08), rgba(0, 40, 90, 0.12));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 230, 255, 0.2);
+    border-radius: 22px;
+    box-shadow: 0 8px 32px rgba(0, 0, 20, 0.4);
+}
+
+/* Header glow */
+[data-theme="lucid-water"] header h1 {
+    background: linear-gradient(to right, #00e5ff, #38bdf8, #7dd3fc);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 20px rgba(0, 230, 255, 0.5));
+}
+
+/* Lang selector */
+[data-theme="lucid-water"] .lang-selector {
+    background: rgba(0, 150, 200, 0.1);
+    border-color: rgba(0, 230, 255, 0.3);
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.1);
+}
+
+/* Primary button - cyan glow */
+[data-theme="lucid-water"] .primary-btn {
+    background: linear-gradient(135deg, #00b4d8, #0077b6);
+    color: #fff;
+    border: 1px solid rgba(0, 230, 255, 0.6);
+    border-radius: 20px;
+    box-shadow:
+        0 0 20px rgba(0, 200, 255, 0.4),
+        0 10px 30px rgba(0, 0, 30, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+[data-theme="lucid-water"] .primary-btn:hover {
+    box-shadow:
+        0 0 40px rgba(0, 230, 255, 0.6),
+        0 15px 40px rgba(0, 0, 30, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    animation: liquid-wobble 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes liquid-wobble {
+    0%   { transform: scale(1); }
+    20%  { transform: scale(1.12, 0.88); }
+    45%  { transform: scale(0.93, 1.08); }
+    70%  { transform: scale(1.05, 0.96); }
+    85%  { transform: scale(0.98, 1.02); }
+    100% { transform: scale(1.03, 1); }
+}
+
+[data-theme="lucid-water"] .swap-btn:hover {
+    animation: liquid-wobble 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    background: rgba(0, 230, 255, 0.15);
+    box-shadow: 0 0 20px rgba(0, 230, 255, 0.3);
+}
+[data-theme="lucid-water"] .icon-btn:hover {
+    animation: liquid-wobble 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    background: rgba(0, 230, 255, 0.1);
+    color: #00e5ff;
+}
+[data-theme="lucid-water"] .secondary-btn:hover {
+    animation: liquid-wobble 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    background: rgba(0, 230, 255, 0.2);
+    border-color: rgba(0, 230, 255, 0.5);
+    box-shadow: 0 0 15px rgba(0, 230, 255, 0.2);
+}
+
+/* Tabs */
+[data-theme="lucid-water"] .tab-btn {
+    border-radius: 12px;
+}
+[data-theme="lucid-water"] .tab-btn.active {
+    background: rgba(0, 230, 255, 0.12);
+    color: #00e5ff;
+    border-bottom-color: #00e5ff;
+    text-shadow: 0 0 20px rgba(0, 230, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.15);
+}
+[data-theme="lucid-water"] .tab-btn:hover {
+    color: #67e8f9;
+    background: rgba(0, 230, 255, 0.07);
+}
+
+/* Dropdown */
+[data-theme="lucid-water"] .dropdown-list {
+    border-color: rgba(0, 230, 255, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 30, 0.8), 0 0 20px rgba(0, 200, 255, 0.1);
+}
+[data-theme="lucid-water"] .dropdown-list li.active {
+    color: #00e5ff;
+    text-shadow: 0 0 10px rgba(0, 230, 255, 0.5);
+}
+
+/* Progress bar glow */
+[data-theme="lucid-water"] .progress-fill,
+[data-theme="lucid-water"] .image-progress-fill {
+    background: linear-gradient(90deg, #00b4d8, #00e5ff);
+    box-shadow: 0 0 15px rgba(0, 230, 255, 0.6);
+}
+
+/* Scrollbar */
+[data-theme="lucid-water"] .dropdown-list::-webkit-scrollbar-thumb {
+    background: #00b4d8;
+    box-shadow: 0 0 6px rgba(0, 230, 255, 0.4);
+}
+
+/* Theme toggle button */
+[data-theme="lucid-water"] .theme-toggle {
+    border-color: rgba(0, 230, 255, 0.4);
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.2);
+}
+[data-theme="lucid-water"] .theme-toggle:hover {
+    border-color: #00e5ff;
+    box-shadow: 0 0 30px rgba(0, 230, 255, 0.5);
+    color: #00e5ff;
+}
+/* ========== END LUCID WATER ========== */
+
 /* File Upload Area */
 .file-upload-area {
     border: 2px dashed var(--border-color); border-radius: 20px; padding: 3rem; text-align: center;
@@ -627,7 +863,10 @@ textarea::placeholder { color: rgba(148, 163, 184, 0.5); }
     transform: translateY(-2px);
 }
 
-[data-theme="light"] .file-upload-area:hover { border-color: rgba(0,0,0,0.2); }
+[data-theme="light"] .file-upload-area:hover,
+[data-theme="lucid-water"] .file-upload-area:hover {
+    border-color: rgba(0,0,0,0.2);
+}
 
 .file-upload-area.dragover {
     border-color: var(--accent-1); background: rgba(99, 102, 241, 0.1); transform: scale(1.02);
