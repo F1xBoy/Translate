@@ -157,10 +157,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Custom Dropdown Logic
-    const setupDropdown = (dropdown, defaultLang) => {
+    const setupDropdown = (dropdown, defaultLang, isSource = false) => {
         const header = dropdown.querySelector('.dropdown-header');
         const selectedSpan = dropdown.querySelector('.selected-lang');
         const list = dropdown.querySelector('.dropdown-list');
+
+        if (isSource) {
+            const li = document.createElement('li');
+            li.setAttribute('data-value', 'auto');
+            li.textContent = 'Auto Detect';
+            if (defaultLang === 'auto') {
+                li.classList.add('active');
+                selectedSpan.textContent = 'Auto Detect';
+                selectedSpan.setAttribute('data-value', 'auto');
+            }
+            list.appendChild(li);
+        }
 
         for (const [code, name] of Object.entries(LANGUAGES)) {
             const li = document.createElement('li');
@@ -198,8 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    setupDropdown(sourceDropdown, 'ru');
-    setupDropdown(targetDropdown, 'en-US');
+    setupDropdown(sourceDropdown, 'auto', true);
+    setupDropdown(targetDropdown, 'en-US', false);
 
     const supportedLangCount = Object.keys(LANGUAGES).length;
     document.getElementById('supportedCount').textContent = `Supports ${supportedLangCount} languages`;
@@ -256,6 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const lang = getSourceLang();
         if (lang === 'ru') sourceText.placeholder = 'Введите текст...';
         else if (lang === 'uz') sourceText.placeholder = 'Matnni kiriting...';
+        else if (lang === 'auto') sourceText.placeholder = 'Type text to detect language...';
         else sourceText.placeholder = 'Enter text...';
     };
 
@@ -868,15 +881,24 @@ document.addEventListener('DOMContentLoaded', () => {
             words.forEach(word => {
                 const text = word.text.trim();
                 if (text.length === 0) return;
-                if (/^[\W\d\s]+$/u.test(text)) return;
+                
+                // Allow simple numbers if they have decent confidence
+                const isOnlyNoise = /^[\W_]+$/u.test(text);
+                if (isOnlyNoise) return;
+                
                 const letterCount = (text.match(/\p{L}/gu) || []).length;
-                if (letterCount < 2) return;
+                const digitCount = (text.match(/\d/g) || []).length;
+                
+                // Need at least 1 letter or digit to be considered valid text
+                if (letterCount < 1 && digitCount < 1) return;
+                
                 const conf = word.confidence || 0;
-                if (conf < 50) return;
+                if (conf < 25) return; // Lowered from 50
+                
                 const { x0, y0, x1, y1 } = word.bbox;
                 const bw = Math.max(x1 - x0, 1);
                 const bh = Math.max(y1 - y0, 1);
-                if (bh < 8 || bw < 10) return;
+                if (bh < 5 || bw < 5) return; // Lowered from 8/10
 
                 const bwPixels = bwCtx.getImageData(
                     Math.max(x0, 0), Math.max(y0, 0),
