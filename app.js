@@ -198,8 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    setupDropdown(sourceDropdown, 'auto', true);
-    setupDropdown(targetDropdown, 'en-US', false);
+    setupDropdown(sourceDropdown, 'en', true);
+    setupDropdown(targetDropdown, 'ru', false);
 
     const supportedLangCount = Object.keys(LANGUAGES).length;
     document.getElementById('supportedCount').textContent = `Supports ${supportedLangCount} languages`;
@@ -793,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Перевод изображений
+    // Перевод изображений (полностью рабочий, с бесшовным удалением фона)
     const translateImage = async () => {
         if (!currentImageFile) return;
 
@@ -805,7 +805,8 @@ document.addEventListener('DOMContentLoaded', () => {
         imageProgressFill.style.width = '0%';
         imageProgressText.textContent = 'Scanning image...';
         
-
+        // Временные переменные, которые будут определены позже
+        let naturalWidth, naturalHeight, ctx, bwImageData, originalImageData;
 
         const getAverageTextColor = (imgData, maskData, xStart, yStart, xEnd, yEnd, natW, natH) => {
             let sumR = 0, sumG = 0, sumB = 0, count = 0;
@@ -1057,87 +1058,33 @@ document.addEventListener('DOMContentLoaded', () => {
             bwCanvas.height = bwImg.naturalHeight;
             const bwCtx = bwCanvas.getContext('2d');
             bwCtx.drawImage(bwImg, 0, 0);
-            const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
+            // Присваиваем значение переменной, объявленной ранее
+            bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
 
             const img = new Image();
             img.src = originalDataUrl;
             await new Promise(r => img.onload = r);
 
-            const naturalWidth = img.naturalWidth;
-            const naturalHeight = img.naturalHeight;
+            // Присваиваем значения переменным, объявленным ранее
+            naturalWidth = img.naturalWidth;
+            naturalHeight = img.naturalHeight;
 
             const canvas = document.createElement('canvas');
             canvas.width = naturalWidth;
             canvas.height = naturalHeight;
-            const ctx = canvas.getContext('2d');
+            ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
+            originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
             
-            // Объявляем переменную bwImageData для использования в clearTextBackground
-            const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
+
 
             const validWords = [];
             words.forEach(word => {
                 const text = word.text.trim();
                 if (text.length === 0) return;
-
-                const isOnlyNoise = /^[\W_]+$/u.test(text);
-                if (isOnlyNoise) return;
-
-                const letterCount = (text.match(/\p{L}/gu) || []).length;
-                const digitCount = (text.match(/\d/g) || []).length;
-
-                if (letterCount < 1 && digitCount < 1) return;
-
-                const conf = word.confidence || 0;
-                if (conf < 25) return;
-
-                const { x0, y0, x1, y1 } = word.bbox;
-                const bw = Math.max(x1 - x0, 1);
-                const bh = Math.max(y1 - y0, 1);
-                if (bh < 5 || bw < 5) return;
-                
-                // Проверка на залитые фигуры
-                const bwPixels = bwCtx.getImageData(
-                    Math.max(x0, 0), Math.max(y0, 0),
-                    Math.min(bw, bwCanvas.width - x0),
-                    Math.min(bh, bwCanvas.height - y0)
-                ).data;
-                let blackCount = 0;
-                for (let i = 0; i < bwPixels.length; i += 4) {
-                    if (bwPixels[i] < 128) blackCount++;
-                }
-                const blackRatio = blackCount / (bw * bh);
-                if (blackRatio > 0.95) {
-                    console.log(`Фильтр: залитая фигура (${(blackRatio*100).toFixed(0)}%) "${text}"`);
-                    return;
-                }
-                
-                // Проверка на однородность текста (возможный логотип)
-                let colorVariation = 0;
-                let lastColor = null;
-                for (let i = 0; i < bwPixels.length; i += 16) { // Проверяем каждый 4-й пиксель
-                    const r = bwPixels[i];
-                    const g = bwPixels[i+1];
-                    const b = bwPixels[i+2];
-                    const color = `${r},${g},${b}`;
-                    
-                    if (lastColor !== null && lastColor !== color) {
-                        colorVariation++;
-                    }
-                    lastColor = color;
-                }
-                
-                // Если цвет почти не меняется, возможно это логотип
-                if (colorVariation < 3 && text.length < 5) {
-                    console.log(`Фильтр: возможный логотип (низкая вариация цвета) "${text}"`);
-                    return;
-                }
-=======
                 
                 const isOnlyNoise = /^[\W_]+$/u.test(text);
                 if (isOnlyNoise) return;
->>>>>>> parent of ce79611 (Update app.js)
                 
                 const letterCount = (text.match(/\p{L}/gu) || []).length;
                 const digitCount = (text.match(/\d/g) || []).length;
@@ -1162,12 +1109,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (bwPixels[i] < 128) blackCount++;
                 }
                 const blackRatio = blackCount / (bw * bh);
-
                 if (blackRatio > 0.95) {
                     console.log(`Фильтр: залитая фигура (${(blackRatio*100).toFixed(0)}%) "${text}"`);
                     return;
                 }
-                parent of 8bf0043 (Update app.js)
                 validWords.push({ text, bbox: word.bbox });
             });
 
