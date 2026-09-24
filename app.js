@@ -925,11 +925,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const bgColor = getBackgroundColor();
             
             if (regionWidth <= 1 || regionHeight <= 1) {
-                const avgColor = [
-                    Math.round((tl[0]+tr[0]+bl[0]+br[0])/4),
-                    Math.round((tl[1]+tr[1]+bl[1]+br[1])/4),
-                    Math.round((tl[2]+tr[2]+bl[2]+br[2])/4)
-                ];
+                // Используем цвет фона вместо среднего цвета углов
                 for (let y = 0; y < regionHeight; y++) {
                     const py = ey0 + y;
                     for (let x = 0; x < regionWidth; x++) {
@@ -947,9 +943,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         if (shouldErase) {
                             const idx = (y * regionWidth + x) * 4;
-                            regionData[idx] = avgColor[0];
-                            regionData[idx+1] = avgColor[1];
-                            regionData[idx+2] = avgColor[2];
+                            regionData[idx] = bgColor[0];
+                            regionData[idx+1] = bgColor[1];
+                            regionData[idx+2] = bgColor[2];
                             regionData[idx+3] = 255;
                         }
                     }
