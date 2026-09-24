@@ -924,6 +924,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Используем улучшенную функцию для определения цвета фона
             const bgColor = getBackgroundColor();
             
+            // Все еще нужны угловые цвета для интерполяции
+            const tl = sampleCornerColor(ex0, ey0) || [0,0,0];
+            const tr = sampleCornerColor(ex1-1, ey0) || [0,0,0];
+            const bl = sampleCornerColor(ex0, ey1-1) || [0,0,0];
+            const br = sampleCornerColor(ex1-1, ey1-1) || [0,0,0];
+            
             if (regionWidth <= 1 || regionHeight <= 1) {
                 // Используем цвет фона вместо среднего цвета углов
                 for (let y = 0; y < regionHeight; y++) {
