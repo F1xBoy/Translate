@@ -1108,7 +1108,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (bwPixels[i] < 128) blackCount++;
                 }
                 const blackRatio = blackCount / (bw * bh);
-                if (blackRatio > 0.9) {
+                if (blackRatio > 0.95) {
                     console.log(`Фильтр: залитая фигура (${(blackRatio*100).toFixed(0)}%) "${text}"`);
                     return;
                 }
