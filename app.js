@@ -847,10 +847,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const regionImageData = ctx.getImageData(ex0, ey0, regionWidth, regionHeight);
             const regionData = regionImageData.data;
-<<<<<<< HEAD
-
-=======
->>>>>>> parent of 8bf0043 (Update app.js)
 
             function sampleCornerColor(cx, cy, radius = 3) {
                 let r = 0, g = 0, b = 0, count = 0;
@@ -1084,7 +1080,6 @@ document.addEventListener('DOMContentLoaded', () => {
             words.forEach(word => {
                 const text = word.text.trim();
                 if (text.length === 0) return;
-<<<<<<< HEAD
 
                 const isOnlyNoise = /^[\W_]+$/u.test(text);
                 if (isOnlyNoise) return;
@@ -1167,13 +1162,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (bwPixels[i] < 128) blackCount++;
                 }
                 const blackRatio = blackCount / (bw * bh);
-<<<<<<< HEAD
-=======
+
                 if (blackRatio > 0.95) {
                     console.log(`Фильтр: залитая фигура (${(blackRatio*100).toFixed(0)}%) "${text}"`);
                     return;
                 }
->>>>>>> parent of 8bf0043 (Update app.js)
+                parent of 8bf0043 (Update app.js)
                 validWords.push({ text, bbox: word.bbox });
             });
 
