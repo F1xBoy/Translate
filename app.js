@@ -835,7 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         const clearTextBackground = (x0, y0, x1, y1) => {
-            const erasePad = 2;
+            const erasePad = 3; // Увеличили отступ для лучшей очистки
             const ex0 = Math.max(0, Math.floor(x0) - erasePad);
             const ey0 = Math.max(0, Math.floor(y0) - erasePad);
             const ex1 = Math.min(naturalWidth, Math.ceil(x1) + erasePad);
@@ -848,6 +848,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const regionImageData = ctx.getImageData(ex0, ey0, regionWidth, regionHeight);
             const regionData = regionImageData.data;
+            
+            // Улучшенная выборка цвета фона
+            function getBackgroundColor() {
+                const sampleSize = Math.min(5, Math.floor(regionWidth * regionHeight * 0.1));
+                const samples = [];
+                
+                // Берем образцы со всех краев области
+                for (let i = 0; i < sampleSize; i++) {
+                    // Верхний край
+                    samples.push({
+                        x: ex0 + Math.floor(i * regionWidth / sampleSize),
+                        y: ey0
+                    });
+                    // Нижний край
+                    samples.push({
+                        x: ex0 + Math.floor(i * regionWidth / sampleSize),
+                        y: ey1 - 1
+                    });
+                    // Левый край
+                    samples.push({
+                        x: ex0,
+                        y: ey0 + Math.floor(i * regionHeight / sampleSize)
+                    });
+                    // Правый край
+                    samples.push({
+                        x: ex1 - 1,
+                        y: ey0 + Math.floor(i * regionHeight / sampleSize)
+                    });
+                }
+                
+                let totalR = 0, totalG = 0, totalB = 0, count = 0;
+                
+                samples.forEach(sample => {
+                    if (sample.x >= 0 && sample.x < naturalWidth && 
+                        sample.y >= 0 && sample.y < naturalHeight) {
+                        const idx = (sample.y * naturalWidth + sample.x) * 4;
+                        if (bwImageData.data[idx] >= 128) { // Только фон, не текст
+                            totalR += originalImageData.data[idx];
+                            totalG += originalImageData.data[idx + 1];
+                            totalB += originalImageData.data[idx + 2];
+                            count++;
+                        }
+                    }
+                });
+                
+                if (count > 0) {
+                    return [
+                        Math.round(totalR / count),
+                        Math.round(totalG / count),
+                        Math.round(totalB / count)
+                    ];
+                }
+                return [128, 128, 128]; // Цвет по умолчанию
+            }
 
             function sampleCornerColor(cx, cy, radius = 3) {
                 let r = 0, g = 0, b = 0, count = 0;
@@ -867,11 +921,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 return count > 0 ? [Math.round(r/count), Math.round(g/count), Math.round(b/count)] : null;
             }
 
-            const tl = sampleCornerColor(ex0, ey0) || [0,0,0];
-            const tr = sampleCornerColor(ex1-1, ey0) || [0,0,0];
-            const bl = sampleCornerColor(ex0, ey1-1) || [0,0,0];
-            const br = sampleCornerColor(ex1-1, ey1-1) || [0,0,0];
-
+            // Используем улучшенную функцию для определения цвета фона
+            const bgColor = getBackgroundColor();
+            
             if (regionWidth <= 1 || regionHeight <= 1) {
                 const avgColor = [
                     Math.round((tl[0]+tr[0]+bl[0]+br[0])/4),
@@ -1177,10 +1229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (bwPixels[i] < 128) blackCount++;
                 }
                 const blackRatio = blackCount / (bw * bh);
-                if (blackRatio > 0.95) {
-                    console.log(`Фильтр: залитая фигура (${(blackRatio*100).toFixed(0)}%) "${text}"`);
-                    return;
-                }
+                // Добавляем слово в список для перевода
                 validWords.push({ text, bbox: word.bbox });
             });
 
@@ -1263,16 +1312,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 const leftPartWidth = Math.min(boxWidth * 0.25, 10);
                 const rightPartWidth = leftPartWidth;
 
+                // Улучшенная обработка цветов
                 const leftColor = getAverageTextColor(originalImageData, bwImageData, x0, y0, x0 + leftPartWidth, y1, naturalWidth, naturalHeight);
                 const rightColor = getAverageTextColor(originalImageData, bwImageData, x1 - rightPartWidth, y0, x1, y1, naturalWidth, naturalHeight);
-
-                const colorLeft = leftColor || rightColor || '#000000';
-                const colorRight = rightColor || leftColor || '#000000';
-
-                const gradient = ctx.createLinearGradient(x0, y0, x1, y0);
-                gradient.addColorStop(0, colorLeft);
-                gradient.addColorStop(1, colorRight);
-                ctx.fillStyle = gradient;
+                
+                // Проверяем, нужно ли использовать градиент
+                const useGradient = leftColor && rightColor && leftColor !== rightColor;
+                
+                if (useGradient) {
+                    const colorLeft = leftColor || rightColor || '#000000';
+                    const colorRight = rightColor || leftColor || '#000000';
+                    
+                    const gradient = ctx.createLinearGradient(x0, y0, x1, y0);
+                    gradient.addColorStop(0, colorLeft);
+                    gradient.addColorStop(1, colorRight);
+                    ctx.fillStyle = gradient;
+                } else {
+                    // Используем единый цвет
+                    const singleColor = leftColor || rightColor || '#000000';
+                    ctx.fillStyle = singleColor;
+                }
 
                 const [bgR, bgG, bgB] = cornerColor || [128,128,128];
                 const bgLuminance = (0.299 * bgR + 0.587 * bgG + 0.114 * bgB) / 255;
