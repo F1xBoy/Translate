@@ -943,9 +943,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         if (shouldErase) {
                             const idx = (y * regionWidth + x) * 4;
-                            regionData[idx] = bgColor[0];
-                            regionData[idx+1] = bgColor[1];
-                            regionData[idx+2] = bgColor[2];
+                            regionData[idx] = avgColor[0];
+                            regionData[idx+1] = avgColor[1];
+                            regionData[idx+2] = avgColor[2];
                             regionData[idx+3] = 255;
                         }
                     }
