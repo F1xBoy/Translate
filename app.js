@@ -847,7 +847,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const regionImageData = ctx.getImageData(ex0, ey0, regionWidth, regionHeight);
             const regionData = regionImageData.data;
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of 8bf0043 (Update app.js)
 
             function sampleCornerColor(cx, cy, radius = 3) {
                 let r = 0, g = 0, b = 0, count = 0;
@@ -1157,6 +1160,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (bwPixels[i] < 128) blackCount++;
                 }
                 const blackRatio = blackCount / (bw * bh);
+<<<<<<< HEAD
+=======
+                if (blackRatio > 0.95) {
+                    console.log(`Фильтр: залитая фигура (${(blackRatio*100).toFixed(0)}%) "${text}"`);
+                    return;
+                }
+>>>>>>> parent of 8bf0043 (Update app.js)
                 validWords.push({ text, bbox: word.bbox });
             });
 
@@ -1239,26 +1249,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 const leftPartWidth = Math.min(boxWidth * 0.25, 10);
                 const rightPartWidth = leftPartWidth;
 
-                // Улучшенная обработка цветов
                 const leftColor = getAverageTextColor(originalImageData, bwImageData, x0, y0, x0 + leftPartWidth, y1, naturalWidth, naturalHeight);
                 const rightColor = getAverageTextColor(originalImageData, bwImageData, x1 - rightPartWidth, y0, x1, y1, naturalWidth, naturalHeight);
-                
-                // Проверяем, нужно ли использовать градиент
-                const useGradient = leftColor && rightColor && leftColor !== rightColor;
-                
-                if (useGradient) {
-                    const colorLeft = leftColor || rightColor || '#000000';
-                    const colorRight = rightColor || leftColor || '#000000';
-                    
-                    const gradient = ctx.createLinearGradient(x0, y0, x1, y0);
-                    gradient.addColorStop(0, colorLeft);
-                    gradient.addColorStop(1, colorRight);
-                    ctx.fillStyle = gradient;
-                } else {
-                    // Используем единый цвет
-                    const singleColor = leftColor || rightColor || '#000000';
-                    ctx.fillStyle = singleColor;
-                }
+
+                const colorLeft = leftColor || rightColor || '#000000';
+                const colorRight = rightColor || leftColor || '#000000';
+
+                const gradient = ctx.createLinearGradient(x0, y0, x1, y0);
+                gradient.addColorStop(0, colorLeft);
+                gradient.addColorStop(1, colorRight);
+                ctx.fillStyle = gradient;
 
                 const [bgR, bgG, bgB] = cornerColor || [128,128,128];
                 const bgLuminance = (0.299 * bgR + 0.587 * bgG + 0.114 * bgB) / 255;
