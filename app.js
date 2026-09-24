@@ -951,7 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
                 ctx.putImageData(regionImageData, ex0, ey0);
-                return avgColor;
+                return bgColor;
             }
 
             for (let y = 0; y < regionHeight; y++) {
