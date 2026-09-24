@@ -793,7 +793,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Перевод изображений (полностью рабочий, с бесшовным удалением фона)
+    // Перевод изображений
     const translateImage = async () => {
         if (!currentImageFile) return;
 
@@ -1134,39 +1134,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const text = word.text.trim();
                 if (text.length === 0) return;
 
-                // Фильтр для пустых символов
                 const isOnlyNoise = /^[\W_]+$/u.test(text);
                 if (isOnlyNoise) return;
 
-                // Подсчет букв и цифр
                 const letterCount = (text.match(/\p{L}/gu) || []).length;
                 const digitCount = (text.match(/\d/g) || []).length;
-                const specialCharCount = text.length - letterCount - digitCount;
 
-                // Исключаем, если нет букв и цифр
                 if (letterCount < 1 && digitCount < 1) return;
 
-                // Исключаем, если слишком много спецсимволов
-                if (specialCharCount > text.length * 0.4) return;
-
-                // Проверка уверенности распознавания
                 const conf = word.confidence || 0;
-                if (conf < 30) return; // Повысили порог уверенности
+                if (conf < 25) return;
 
                 const { x0, y0, x1, y1 } = word.bbox;
                 const bw = Math.max(x1 - x0, 1);
                 const bh = Math.max(y1 - y0, 1);
-                
-                // Исключаем слишком маленькие элементы
-                if (bh < 8 || bw < 8) return;
-                
-                // Исключаем очень длинные слова (возможные логотипы или баркоды)
-                if (text.length > 20) {
-                    // Но проверяем, не является ли это датой или номером
-                    if (!/\d{4,}/.test(text) && !/\d{2}[.\/\-]\d{2}[.\/\-]\d{2,4}/.test(text)) {
-                        return;
-                    }
-                }
+                if (bh < 5 || bw < 5) return;
                 
                 // Проверка на залитые фигуры
                 const bwPixels = bwCtx.getImageData(
@@ -1228,7 +1210,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (bwPixels[i] < 128) blackCount++;
                 }
                 const blackRatio = blackCount / (bw * bh);
-                // Добавляем слово в список для перевода
                 validWords.push({ text, bbox: word.bbox });
             });
 
