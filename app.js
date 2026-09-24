@@ -1083,6 +1083,7 @@ document.addEventListener('DOMContentLoaded', () => {
             words.forEach(word => {
                 const text = word.text.trim();
                 if (text.length === 0) return;
+<<<<<<< HEAD
 
                 const isOnlyNoise = /^[\W_]+$/u.test(text);
                 if (isOnlyNoise) return;
@@ -1136,6 +1137,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log(`Фильтр: возможный логотип (низкая вариация цвета) "${text}"`);
                     return;
                 }
+=======
+                
+                const isOnlyNoise = /^[\W_]+$/u.test(text);
+                if (isOnlyNoise) return;
+>>>>>>> parent of ce79611 (Update app.js)
                 
                 const letterCount = (text.match(/\p{L}/gu) || []).length;
                 const digitCount = (text.match(/\d/g) || []).length;
