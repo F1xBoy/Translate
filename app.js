@@ -804,6 +804,9 @@ document.addEventListener('DOMContentLoaded', () => {
         overlayLayer.innerHTML = '';
         imageProgressFill.style.width = '0%';
         imageProgressText.textContent = 'Scanning image...';
+        
+        // Временные переменные, которые будут определены позже
+        let naturalWidth, naturalHeight, ctx, bwImageData, originalImageData;
 
         const getAverageTextColor = (imgData, maskData, xStart, yStart, xEnd, yEnd, natW, natH) => {
             let sumR = 0, sumG = 0, sumB = 0, count = 0;
@@ -1055,21 +1058,23 @@ document.addEventListener('DOMContentLoaded', () => {
             bwCanvas.height = bwImg.naturalHeight;
             const bwCtx = bwCanvas.getContext('2d');
             bwCtx.drawImage(bwImg, 0, 0);
-            const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
+            // Присваиваем значение переменной, объявленной ранее
+            bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
 
             const img = new Image();
             img.src = originalDataUrl;
             await new Promise(r => img.onload = r);
 
-            const naturalWidth = img.naturalWidth;
-            const naturalHeight = img.naturalHeight;
+            // Присваиваем значения переменным, объявленным ранее
+            naturalWidth = img.naturalWidth;
+            naturalHeight = img.naturalHeight;
 
             const canvas = document.createElement('canvas');
             canvas.width = naturalWidth;
             canvas.height = naturalHeight;
-            const ctx = canvas.getContext('2d');
+            ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
+            originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
             
 
 
