@@ -198,8 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    setupDropdown(sourceDropdown, 'auto', true);
-    setupDropdown(targetDropdown, 'en-US', false);
+    setupDropdown(sourceDropdown, 'en', true);
+    setupDropdown(targetDropdown, 'ru', false);
 
     const supportedLangCount = Object.keys(LANGUAGES).length;
     document.getElementById('supportedCount').textContent = `Supports ${supportedLangCount} languages`;
