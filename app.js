@@ -926,6 +926,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const br = sampleCornerColor(ex1-1, ey1-1) || [0,0,0];
 
             if (regionWidth <= 1 || regionHeight <= 1) {
+                const avgColor = [
+                    Math.round((tl[0]+tr[0]+bl[0]+br[0])/4),
+                    Math.round((tl[1]+tr[1]+bl[1]+br[1])/4),
+                    Math.round((tl[2]+tr[2]+bl[2]+br[2])/4)
+                ];
                 for (let y = 0; y < regionHeight; y++) {
                     const py = ey0 + y;
                     for (let x = 0; x < regionWidth; x++) {
