@@ -805,8 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
         imageProgressFill.style.width = '0%';
         imageProgressText.textContent = 'Scanning image...';
         
-        // Временные переменные, которые будут определены позже
-        let naturalWidth, naturalHeight, ctx, bwImageData, originalImageData;
+
 
         const getAverageTextColor = (imgData, maskData, xStart, yStart, xEnd, yEnd, natW, natH) => {
             let sumR = 0, sumG = 0, sumB = 0, count = 0;
@@ -1112,23 +1111,21 @@ document.addEventListener('DOMContentLoaded', () => {
             bwCanvas.height = bwImg.naturalHeight;
             const bwCtx = bwCanvas.getContext('2d');
             bwCtx.drawImage(bwImg, 0, 0);
-            // Присваиваем значение переменной, объявленной ранее
-            bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
+            const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
 
             const img = new Image();
             img.src = originalDataUrl;
             await new Promise(r => img.onload = r);
 
-            // Присваиваем значения переменным, объявленным ранее
-            naturalWidth = img.naturalWidth;
-            naturalHeight = img.naturalHeight;
+            const naturalWidth = img.naturalWidth;
+            const naturalHeight = img.naturalHeight;
 
             const canvas = document.createElement('canvas');
             canvas.width = naturalWidth;
             canvas.height = naturalHeight;
-            ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
-            originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
+            const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
             
 
 
