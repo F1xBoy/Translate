@@ -1082,9 +1082,77 @@ document.addEventListener('DOMContentLoaded', () => {
             words.forEach(word => {
                 const text = word.text.trim();
                 if (text.length === 0) return;
-                
+
+                // Фильтр для пустых символов
                 const isOnlyNoise = /^[\W_]+$/u.test(text);
                 if (isOnlyNoise) return;
+
+                // Подсчет букв и цифр
+                const letterCount = (text.match(/\p{L}/gu) || []).length;
+                const digitCount = (text.match(/\d/g) || []).length;
+                const specialCharCount = text.length - letterCount - digitCount;
+
+                // Исключаем, если нет букв и цифр
+                if (letterCount < 1 && digitCount < 1) return;
+
+                // Исключаем, если слишком много спецсимволов
+                if (specialCharCount > text.length * 0.4) return;
+
+                // Проверка уверенности распознавания
+                const conf = word.confidence || 0;
+                if (conf < 30) return; // Повысили порог уверенности
+
+                const { x0, y0, x1, y1 } = word.bbox;
+                const bw = Math.max(x1 - x0, 1);
+                const bh = Math.max(y1 - y0, 1);
+                
+                // Исключаем слишком маленькие элементы
+                if (bh < 8 || bw < 8) return;
+                
+                // Исключаем очень длинные слова (возможные логотипы или баркоды)
+                if (text.length > 20) {
+                    // Но проверяем, не является ли это датой или номером
+                    if (!/\d{4,}/.test(text) && !/\d{2}[.\/\-]\d{2}[.\/\-]\d{2,4}/.test(text)) {
+                        return;
+                    }
+                }
+                
+                // Проверка на залитые фигуры
+                const bwPixels = bwCtx.getImageData(
+                    Math.max(x0, 0), Math.max(y0, 0),
+                    Math.min(bw, bwCanvas.width - x0),
+                    Math.min(bh, bwCanvas.height - y0)
+                ).data;
+                let blackCount = 0;
+                for (let i = 0; i < bwPixels.length; i += 4) {
+                    if (bwPixels[i] < 128) blackCount++;
+                }
+                const blackRatio = blackCount / (bw * bh);
+                if (blackRatio > 0.9) {
+                    console.log(`Фильтр: залитая фигура (${(blackRatio*100).toFixed(0)}%) "${text}"`);
+                    return;
+                }
+                
+                // Проверка на однородность текста (возможный логотип)
+                let colorVariation = 0;
+                let lastColor = null;
+                for (let i = 0; i < bwPixels.length; i += 16) { // Проверяем каждый 4-й пиксель
+                    const r = bwPixels[i];
+                    const g = bwPixels[i+1];
+                    const b = bwPixels[i+2];
+                    const color = `${r},${g},${b}`;
+                    
+                    if (lastColor !== null && lastColor !== color) {
+                        colorVariation++;
+                    }
+                    lastColor = color;
+                }
+                
+                // Если цвет почти не меняется, возможно это логотип
+                if (colorVariation < 3 && text.length < 5) {
+                    console.log(`Фильтр: возможный логотип (низкая вариация цвета) "${text}"`);
+                    return;
+                }
                 
                 const letterCount = (text.match(/\p{L}/gu) || []).length;
                 const digitCount = (text.match(/\d/g) || []).length;
