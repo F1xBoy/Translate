@@ -1071,8 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.drawImage(img, 0, 0);
             const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
             
-            // Объявляем переменную bwImageData для использования в clearTextBackground
-            const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
+
 
             const validWords = [];
             words.forEach(word => {
