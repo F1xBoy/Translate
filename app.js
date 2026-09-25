@@ -462,11 +462,50 @@ document.addEventListener('DOMContentLoaded', () => {
             line.text = line.words.map(w => w.text).join(' ');
             line.avgConfidence = line.words.reduce((s, w) => s + (w.confidence || 0), 0) / line.words.length;
             line.avgBlackRatio = line.words.reduce((s, w) => s + (w.blackRatio || 0), 0) / line.words.length;
+            line.avgSymbolConfidence = line.words.reduce((s, w) => s + (w.symbolConfidence || 100), 0) / line.words.length;
+            line.symbolCoverage = line.words.reduce((s, w) => s + (w.symbolCoverage || 1), 0) / line.words.length;
         }
         return lines;
     }
 
-    // ============ LOGO FILTER — умеренно строгий ============
+    // ============ ЛОГО-ФИЛЬТР: посимвольная валидация ============
+    // Главная идея: если OCR сам сомневается в буквах (symbols), это не текст.
+    // У реальных слов буквы распознаны уверенно и покрывают bbox равномерно.
+    // У логотипов confidence символов низкий, покрытие неравномерное.
+    function analyzeWordSymbols(word) {
+        const symbols = word.symbols || [];
+        if (symbols.length === 0) {
+            // Нет данных по символам — используем confidence слова
+            const c = +(word.confidence || 0);
+            return { symbolConfidence: c, symbolCoverage: 1, symbolCount: word.text.replace(/\s/g,'').length, hasData: false };
+        }
+
+        const confs = symbols.map(s => +s.confidence || 0);
+        const avgConf = confs.reduce((a, b) => a + b, 0) / confs.length;
+        const highConfCount = confs.filter(c => c > 60).length;
+
+        // Покрытие bbox: суммарная площадь символов / площадь bbox слова
+        const wordBox = word.bbox;
+        const wordW = wordBox.x1 - wordBox.x0;
+        const wordH = wordBox.y1 - wordBox.y0;
+        const wordArea = wordW * wordH;
+        let symbolsArea = 0;
+        symbols.forEach(s => {
+            const sb = s.bbox;
+            if (!sb) return;
+            symbolsArea += Math.max(0, sb.x1 - sb.x0) * Math.max(0, sb.y1 - sb.y0);
+        });
+        const coverage = wordArea > 0 ? Math.min(1, symbolsArea / wordArea) : 1;
+
+        return {
+            symbolConfidence: avgConf,
+            highConfRatio: highConfCount / confs.length,
+            symbolCoverage: coverage,
+            symbolCount: symbols.length,
+            hasData: true
+        };
+    }
+
     function isLikelyLogo(line, bwImageData, naturalWidth, naturalHeight) {
         const { x0, y0, x1, y1 } = line.bbox;
         const w = x1 - x0;
@@ -477,208 +516,125 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalChars = line.text.replace(/\s/g, '').length;
         const wordCount = line.words.length;
 
-        // 1. Плотная заливка — иконка/плашка/логотип
+        // Быстрые геометрические фильтры
         if (line.avgBlackRatio > 0.72) return true;
-
-        // 2. Практически пусто — шум/артефакт
         if (line.avgBlackRatio < 0.01) return true;
-
-        // 3. Мало букв и цифр вместе
         if (letters + digits < 2) return true;
-
-        // 4. Одиночное слово с 1 буквой — почти всегда иконка
         if (wordCount === 1 && letters <= 1) return true;
-
-        // 5. Одиночное квадратное слово с ≤3 буквами (типичный значок)
         if (wordCount === 1 && letters <= 3 && ratio < 1.4) return true;
-
-        // 6. Очень вытянутое одиночное короткое (стрелки, разделители)
         if (wordCount === 1 && totalChars <= 3 && ratio > 10) return true;
-
-        // 7. Аномально вытянутое одиночное слово с 1-2 символами
         if (wordCount === 1 && letters <= 2 && ratio > 5) return true;
 
-        // 8. Изолированное слово с низким OCR-confidence
-        if (wordCount === 1 && line.avgConfidence < 55) return true;
+        // ГЛАВНАЯ ПРОВЕРКА: посимвольная валидация
+        // У логотипа confidence символов низкий или покрытие неровное
+        const totalSymbolConf = line.words.reduce((s, w) => {
+            const a = analyzeWordSymbols(w);
+            return s + (a.hasData ? a.symbolConfidence : +(w.confidence || 0));
+        }, 0) / line.words.length;
 
-        // 9. Проверка текстуры: считаем переходы чёрное↔белое внутри bbox.
-        //    У букв много переходов, у залитых иконок мало.
-        const stepX = Math.max(1, Math.floor(w / 120));
-        const stepY = Math.max(1, Math.floor(h / 60));
-        let transitions = 0;
-        for (let py = Math.floor(y0); py < Math.ceil(y1); py += stepY) {
-            let prev = -1;
-            for (let px = Math.floor(x0); px < Math.ceil(x1); px += stepX) {
-                if (px < 0 || px >= naturalWidth || py < 0 || py >= naturalHeight) continue;
-                const val = bwImageData.data[(py * naturalWidth + px) * 4] < 128 ? 0 : 1;
-                if (prev !== -1 && val !== prev) transitions++;
-                prev = val;
-            }
-        }
-        const transPerChar = transitions / Math.max(totalChars, 1);
-        // У коротких одиночных слов текстура обычно низкая → иконка
-        if (wordCount === 1 && totalChars <= 3 && transPerChar < 10) return true;
+        const avgCoverage = line.words.reduce((s, w) => {
+            const a = analyzeWordSymbols(w);
+            return s + a.symbolCoverage;
+        }, 0) / line.words.length;
+
+        // Если символы плохо распознаны (средний confidence < 55) — не текст
+        if (totalSymbolConf < 55) return true;
+
+        // Если символы плохо покрывают bbox (coverage < 0.35) — странная форма, не текст
+        // У обычного текста буквы занимают 40-70% bbox
+        if (avgCoverage < 0.35) return true;
+
+        // Изолированное слово с низкой уверенностью
+        if (wordCount === 1 && line.avgConfidence < 55) return true;
 
         return false;
     }
 
-    async function processImageForTranslation(sourceDataUrl, sourceLang, targetLang, onProgress) {
-        // 1. Бинаризация Otsu
-        const bwDataUrl = await new Promise((resolve, reject) => {
-            const srcImg = new Image();
-            srcImg.onload = () => {
-                const w = srcImg.naturalWidth, h = srcImg.naturalHeight;
-                const cvs = document.createElement('canvas');
-                cvs.width = w; cvs.height = h;
-                const c = cvs.getContext('2d', { willReadFrequently: true });
-                c.drawImage(srcImg, 0, 0);
-                const imgData = c.getImageData(0, 0, w, h);
-                const pix = imgData.data;
-                const gray = new Uint8Array(w * h);
-                for (let i = 0; i < w * h; i++) {
-                    gray[i] = Math.round(0.299 * pix[i*4] + 0.587 * pix[i*4+1] + 0.114 * pix[i*4+2]);
-                }
-                const hist = new Int32Array(256);
-                for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
-                const total = gray.length;
-                let sum = 0;
-                for (let t = 0; t < 256; t++) sum += t * hist[t];
-                let sumB = 0, wB = 0, maxVar = 0, threshold = 128;
-                for (let t = 0; t < 256; t++) {
-                    wB += hist[t];
-                    if (wB === 0) continue;
-                    const wF = total - wB;
-                    if (wF === 0) break;
-                    sumB += t * hist[t];
-                    const mB = sumB / wB;
-                    const mF = (sum - sumB) / wF;
-                    const v = wB * wF * (mB - mF) * (mB - mF);
-                    if (v > maxVar) { maxVar = v; threshold = t; }
-                }
-                for (let i = 0; i < w * h; i++) {
-                    const v = gray[i] < threshold ? 0 : 255;
-                    pix[i*4] = pix[i*4+1] = pix[i*4+2] = v;
-                    pix[i*4+3] = 255;
-                }
-                c.putImageData(imgData, 0, 0);
-                let blackPixels = 0;
-                for (let i = 0; i < pix.length; i += 4) if (pix[i] === 0) blackPixels++;
-                if (blackPixels > (total / 2)) {
-                    for (let i = 0; i < pix.length; i += 4) {
-                        pix[i] = 255 - pix[i];
-                        pix[i+1] = 255 - pix[i+1];
-                        pix[i+2] = 255 - pix[i+2];
+    // ============ МНОГОТОЧЕЧНЫЙ ГРАДИЕНТ ============
+    // Собираем цвет текста в N точках по ширине bbox и строим плавный градиент.
+    // Точки без данных — интерполируем между соседними.
+    function buildTextGradient(line, originalImageData, bwImageData, naturalWidth, naturalHeight) {
+        const { x0, y0, x1, y1 } = line.bbox;
+        const w = x1 - x0;
+        if (w <= 0) return '#000000';
+
+        const NUM_POINTS = 7;
+        const samples = [];
+
+        for (let i = 0; i < NUM_POINTS; i++) {
+            const startX = x0 + (i / NUM_POINTS) * w;
+            const endX = x0 + ((i + 1) / NUM_POINTS) * w;
+
+            let sR = 0, sG = 0, sB = 0, cnt = 0;
+            for (let py = Math.max(0, Math.floor(y0)); py < Math.min(naturalHeight, Math.ceil(y1)); py++) {
+                for (let px = Math.max(0, Math.floor(startX)); px < Math.min(naturalWidth, Math.ceil(endX)); px++) {
+                    const idx = (py * naturalWidth + px) * 4;
+                    if (bwImageData.data[idx] < 128) {
+                        sR += originalImageData.data[idx];
+                        sG += originalImageData.data[idx + 1];
+                        sB += originalImageData.data[idx + 2];
+                        cnt++;
                     }
-                    c.putImageData(imgData, 0, 0);
-                }
-                resolve(cvs.toDataURL('image/png'));
-            };
-            srcImg.onerror = () => reject(new Error('Failed to load source image'));
-            srcImg.src = sourceDataUrl;
-        });
-
-        // 2. Tesseract OCR
-        const tessMap = {
-            'en': 'eng', 'en-US': 'eng', 'en-GB': 'eng',
-            'ru': 'rus', 'uk': 'ukr', 'be': 'bel',
-            'es': 'spa', 'fr': 'fra', 'de': 'deu', 'it': 'ita', 'pt': 'por',
-            'zh-CN': 'chi_sim', 'zh-TW': 'chi_tra', 'ja': 'jpn', 'ko': 'kor',
-            'ar': 'ara', 'fa': 'fas', 'tr': 'tur', 'pl': 'pol', 'nl': 'nld',
-            'cs': 'ces', 'sv': 'swe', 'da': 'dan', 'fi': 'fin', 'no': 'nor',
-            'el': 'ell', 'he': 'heb', 'hi': 'hin', 'th': 'tha', 'vi': 'vie'
-        };
-        const tessLang = tessMap[sourceLang] || 'eng';
-        if (onProgress) onProgress(`Scanning (${tessLang})...`, 0);
-
-        const result = await Tesseract.recognize(bwDataUrl, tessLang, {
-            logger: m => {
-                if (m.status === 'recognizing text' && onProgress) {
-                    onProgress(`Scanning (${tessLang})... ${Math.round(m.progress * 100)}%`, Math.round(m.progress * 100));
                 }
             }
-        });
 
-        const words = result.data && result.data.words;
-        if (!words || words.length === 0) throw new Error('No text detected.');
-
-        // 3. Подготовка canvas и BW
-        const bwImg = new Image();
-        bwImg.src = bwDataUrl;
-        await new Promise((res, rej) => { bwImg.onload = res; bwImg.onerror = rej; });
-        const bwCanvas = document.createElement('canvas');
-        bwCanvas.width = bwImg.naturalWidth;
-        bwCanvas.height = bwImg.naturalHeight;
-        const bwCtx = bwCanvas.getContext('2d', { willReadFrequently: true });
-        bwCtx.drawImage(bwImg, 0, 0);
-        const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
-
-        const img = new Image();
-        img.src = sourceDataUrl;
-        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
-        const naturalWidth = img.naturalWidth;
-        const naturalHeight = img.naturalHeight;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = naturalWidth;
-        canvas.height = naturalHeight;
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0);
-        const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
-
-        // 4. Фильтр слов (средней строгости)
-        const rawWords = [];
-        words.forEach(word => {
-            const text = word.text.trim();
-            if (text.length === 0) return;
-            if (/^[\W_]+$/u.test(text)) return;
-            const letters = (text.match(/\p{L}/gu) || []).length;
-            const digits = (text.match(/\d/g) || []).length;
-            if (letters < 1 && digits < 1) return;
-            const conf = word.confidence || 0;
-            if (conf < 30) return;
-            const { x0, y0, x1, y1 } = word.bbox;
-            const bw = Math.max(x1 - x0, 1);
-            const bh = Math.max(y1 - y0, 1);
-            if (bh < 5 || bw < 5) return;
-            const bwPixels = bwCtx.getImageData(
-                Math.max(x0, 0), Math.max(y0, 0),
-                Math.min(bw, bwCanvas.width - x0),
-                Math.min(bh, bwCanvas.height - y0)
-            ).data;
-            let blackCount = 0;
-            for (let i = 0; i < bwPixels.length; i += 4) if (bwPixels[i] < 128) blackCount++;
-            const blackRatio = blackCount / (bw * bh);
-            if (blackRatio > 0.88) return;
-            if (blackRatio < 0.008) return;
-            rawWords.push({ text, bbox: word.bbox, confidence: conf, blackRatio });
-        });
-
-        // 5. Группировка + фильтр логотипов
-        let lines = groupWordsIntoLines(rawWords);
-        lines = lines.filter(line => !isLikelyLogo(line, bwImageData, naturalWidth, naturalHeight));
-
-        if (lines.length === 0) {
-            throw new Error(`Readable text not found (${rawWords.length} words → 0 lines after filter).`);
+            const pos = i / (NUM_POINTS - 1);
+            if (cnt > 0) {
+                samples.push({ pos, r: sR / cnt, g: sG / cnt, b: sB / cnt, valid: true });
+            } else {
+                samples.push({ pos, r: 0, g: 0, b: 0, valid: false });
+            }
         }
 
-        // 6. Перевод строками
-        if (onProgress) onProgress('Translating text...', 100);
-        const joinedText = lines.map(l => l.text).join('\n');
-        const transUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(joinedText)}`;
-        const transResp = await fetch(transUrl);
-        const transData = await transResp.json();
-        let fullTranslatedText = joinedText;
-        if (transData && transData[0]) {
-            fullTranslatedText = transData[0].map(c => c[0] || '').join('');
-            const arr = fullTranslatedText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            lines.forEach((line, i) => { line.translatedText = arr[i] || line.text; });
-        } else {
-            lines.forEach(line => { line.translatedText = line.text; });
+        // Если совсем нет данных — чёрный
+        const anyValid = samples.some(s => s.valid);
+        if (!anyValid) return '#000000';
+
+        // Интерполяция пропусков между валидными точками
+        for (let i = 0; i < samples.length; i++) {
+            if (samples[i].valid) continue;
+            // Найти ближайший валидный слева
+            let left = -1, right = -1;
+            for (let j = i - 1; j >= 0; j--) if (samples[j].valid) { left = j; break; }
+            for (let j = i + 1; j < samples.length; j++) if (samples[j].valid) { right = j; break; }
+
+            if (left >= 0 && right >= 0) {
+                const t = (i - left) / (right - left);
+                samples[i].r = samples[left].r * (1 - t) + samples[right].r * t;
+                samples[i].g = samples[left].g * (1 - t) + samples[right].g * t;
+                samples[i].b = samples[left].b * (1 - t) + samples[right].b * t;
+                samples[i].valid = true;
+            } else if (left >= 0) {
+                samples[i].r = samples[left].r;
+                samples[i].g = samples[left].g;
+                samples[i].b = samples[left].b;
+                samples[i].valid = true;
+            } else if (right >= 0) {
+                samples[i].r = samples[right].r;
+                samples[i].g = samples[right].g;
+                samples[i].b = samples[right].b;
+                samples[i].valid = true;
+            }
         }
 
-        // 7. Inpaint + отрисовка
-        function inpaintTextBackground(line) {
-            const { x0, y0, x1, y1 } = line.bbox;
+        // Если остался только 1 валидный цвет — просто используем его
+        const validSamples = samples.filter(s => s.valid);
+        if (validSamples.length === 0) return '#000000';
+
+        // Проверяем разброс: если все цвета почти одинаковые, всё равно используем градиент (для совместимости)
+        const grad = ctx => {
+            const g = ctx.createLinearGradient(x0, y0, x1, y0);
+            validSamples.forEach(s => {
+                g.addColorStop(s.pos, `rgb(${Math.round(s.r)}, ${Math.round(s.g)}, ${Math.round(s.b)})`);
+            });
+            return g;
+        };
+        return grad;
+    }
+
+    // ============ INPAINT (nearest-neighbor) ============
+    function makeInpaintFunction(ctx, bwImageData, naturalWidth, naturalHeight) {
+        return function inpaintRegion(x0, y0, x1, y1) {
             const pad = 4;
             const ex0 = Math.max(0, Math.floor(x0) - pad);
             const ey0 = Math.max(0, Math.floor(y0) - pad);
@@ -755,29 +711,197 @@ document.addEventListener('DOMContentLoaded', () => {
                 data[dOff+3] = 255;
             }
             ctx.putImageData(regionImageData, ex0, ey0);
+        };
+    }
+
+    async function processImageForTranslation(sourceDataUrl, sourceLang, targetLang, onProgress) {
+        // 1. Бинаризация Otsu
+        const bwDataUrl = await new Promise((resolve, reject) => {
+            const srcImg = new Image();
+            srcImg.onload = () => {
+                const w = srcImg.naturalWidth, h = srcImg.naturalHeight;
+                const cvs = document.createElement('canvas');
+                cvs.width = w; cvs.height = h;
+                const c = cvs.getContext('2d', { willReadFrequently: true });
+                c.drawImage(srcImg, 0, 0);
+                const imgData = c.getImageData(0, 0, w, h);
+                const pix = imgData.data;
+                const gray = new Uint8Array(w * h);
+                for (let i = 0; i < w * h; i++) {
+                    gray[i] = Math.round(0.299 * pix[i*4] + 0.587 * pix[i*4+1] + 0.114 * pix[i*4+2]);
+                }
+                const hist = new Int32Array(256);
+                for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
+                const total = gray.length;
+                let sum = 0;
+                for (let t = 0; t < 256; t++) sum += t * hist[t];
+                let sumB = 0, wB = 0, maxVar = 0, threshold = 128;
+                for (let t = 0; t < 256; t++) {
+                    wB += hist[t];
+                    if (wB === 0) continue;
+                    const wF = total - wB;
+                    if (wF === 0) break;
+                    sumB += t * hist[t];
+                    const mB = sumB / wB;
+                    const mF = (sum - sumB) / wF;
+                    const v = wB * wF * (mB - mF) * (mB - mF);
+                    if (v > maxVar) { maxVar = v; threshold = t; }
+                }
+                for (let i = 0; i < w * h; i++) {
+                    const v = gray[i] < threshold ? 0 : 255;
+                    pix[i*4] = pix[i*4+1] = pix[i*4+2] = v;
+                    pix[i*4+3] = 255;
+                }
+                c.putImageData(imgData, 0, 0);
+                let blackPixels = 0;
+                for (let i = 0; i < pix.length; i += 4) if (pix[i] === 0) blackPixels++;
+                if (blackPixels > (total / 2)) {
+                    for (let i = 0; i < pix.length; i += 4) {
+                        pix[i] = 255 - pix[i];
+                        pix[i+1] = 255 - pix[i+1];
+                        pix[i+2] = 255 - pix[i+2];
+                    }
+                    c.putImageData(imgData, 0, 0);
+                }
+                resolve(cvs.toDataURL('image/png'));
+            };
+            srcImg.onerror = () => reject(new Error('Failed to load source image'));
+            srcImg.src = sourceDataUrl;
+        });
+
+        // 2. Tesseract
+        const tessMap = {
+            'en': 'eng', 'en-US': 'eng', 'en-GB': 'eng',
+            'ru': 'rus', 'uk': 'ukr', 'be': 'bel',
+            'es': 'spa', 'fr': 'fra', 'de': 'deu', 'it': 'ita', 'pt': 'por',
+            'zh-CN': 'chi_sim', 'zh-TW': 'chi_tra', 'ja': 'jpn', 'ko': 'kor',
+            'ar': 'ara', 'fa': 'fas', 'tr': 'tur', 'pl': 'pol', 'nl': 'nld',
+            'cs': 'ces', 'sv': 'swe', 'da': 'dan', 'fi': 'fin', 'no': 'nor',
+            'el': 'ell', 'he': 'heb', 'hi': 'hin', 'th': 'tha', 'vi': 'vie'
+        };
+        const tessLang = tessMap[sourceLang] || 'eng';
+        if (onProgress) onProgress(`Scanning (${tessLang})...`, 0);
+
+        const result = await Tesseract.recognize(bwDataUrl, tessLang, {
+            logger: m => {
+                if (m.status === 'recognizing text' && onProgress) {
+                    onProgress(`Scanning (${tessLang})... ${Math.round(m.progress * 100)}%`, Math.round(m.progress * 100));
+                }
+            }
+        });
+
+        const words = result.data && result.data.words;
+        if (!words || words.length === 0) throw new Error('No text detected.');
+
+        // 3. Canvas + BW
+        const bwImg = new Image();
+        bwImg.src = bwDataUrl;
+        await new Promise((res, rej) => { bwImg.onload = res; bwImg.onerror = rej; });
+        const bwCanvas = document.createElement('canvas');
+        bwCanvas.width = bwImg.naturalWidth;
+        bwCanvas.height = bwImg.naturalHeight;
+        const bwCtx = bwCanvas.getContext('2d', { willReadFrequently: true });
+        bwCtx.drawImage(bwImg, 0, 0);
+        const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
+
+        const img = new Image();
+        img.src = sourceDataUrl;
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+        const naturalWidth = img.naturalWidth;
+        const naturalHeight = img.naturalHeight;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = naturalWidth;
+        canvas.height = naturalHeight;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0);
+        const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
+
+        // 4. Фильтр слов
+        const rawWords = [];
+        words.forEach(word => {
+            const text = word.text.trim();
+            if (text.length === 0) return;
+            if (/^[\W_]+$/u.test(text)) return;
+            const letters = (text.match(/\p{L}/gu) || []).length;
+            const digits = (text.match(/\d/g) || []).length;
+            if (letters < 1 && digits < 1) return;
+            const conf = +word.confidence || 0;
+            if (conf < 25) return;
+            const { x0, y0, x1, y1 } = word.bbox;
+            const bw = Math.max(x1 - x0, 1);
+            const bh = Math.max(y1 - y0, 1);
+            if (bh < 5 || bw < 5) return;
+            const bwPixels = bwCtx.getImageData(
+                Math.max(x0, 0), Math.max(y0, 0),
+                Math.min(bw, bwCanvas.width - x0),
+                Math.min(bh, bwCanvas.height - y0)
+            ).data;
+            let blackCount = 0;
+            for (let i = 0; i < bwPixels.length; i += 4) if (bwPixels[i] < 128) blackCount++;
+            const blackRatio = blackCount / (bw * bh);
+            if (blackRatio > 0.9) return;
+            if (blackRatio < 0.005) return;
+
+            const symAnalysis = analyzeWordSymbols(word);
+            rawWords.push({
+                text,
+                bbox: word.bbox,
+                confidence: conf,
+                blackRatio,
+                symbolConfidence: symAnalysis.symbolConfidence,
+                symbolCoverage: symAnalysis.symbolCoverage
+            });
+        });
+
+        // 5. Группировка + лого-фильтр
+        let lines = groupWordsIntoLines(rawWords);
+        lines = lines.filter(line => !isLikelyLogo(line, bwImageData, naturalWidth, naturalHeight));
+
+        if (lines.length === 0) {
+            throw new Error(`Readable text not found (${rawWords.length} words → 0 lines after filter).`);
         }
 
-        for (const line of lines) {
-            inpaintTextBackground(line);
+        // 6. Перевод строками
+        if (onProgress) onProgress('Translating text...', 100);
+        const joinedText = lines.map(l => l.text).join('\n');
+        const transUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(joinedText)}`;
+        const transResp = await fetch(transUrl);
+        const transData = await transResp.json();
+        let fullTranslatedText = joinedText;
+        if (transData && transData[0]) {
+            fullTranslatedText = transData[0].map(c => c[0] || '').join('');
+            const arr = fullTranslatedText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            lines.forEach((line, i) => { line.translatedText = arr[i] || line.text; });
+        } else {
+            lines.forEach(line => { line.translatedText = line.text; });
+        }
 
-            const { x0, y0, x1, y1 } = line.bbox;
-            const boxWidth = x1 - x0;
-            const boxHeight = y1 - y0;
-            const startY = Math.max(0, Math.floor(y0));
-            const endY = Math.min(naturalHeight, Math.ceil(y1));
+        // 7. Inpaint + отрисовка
+        const inpaintRegion = makeInpaintFunction(ctx, bwImageData, naturalWidth, naturalHeight);
+
+        for (const line of lines) {
+            const origBox = { x0: line.bbox.x0, y0: line.bbox.y0, x1: line.bbox.x1, y1: line.bbox.y1 };
+            const origW = origBox.x1 - origBox.x0;
+            const origH = origBox.y1 - origBox.y0;
+
+            // Реальная высота текста в строке
+            const startY = Math.max(0, Math.floor(origBox.y0));
+            const endY = Math.min(naturalHeight, Math.ceil(origBox.y1));
             let topRow = null, bottomRow = null;
             for (let py = startY; py < endY; py++) {
                 let has = false;
-                for (let px = Math.max(0, Math.floor(x0)); px < Math.min(naturalWidth, Math.ceil(x1)); px++) {
+                for (let px = Math.max(0, Math.floor(origBox.x0)); px < Math.min(naturalWidth, Math.ceil(origBox.x1)); px++) {
                     if (bwImageData.data[(py * naturalWidth + px) * 4] < 128) { has = true; break; }
                 }
                 if (has) { if (topRow === null) topRow = py; bottomRow = py; }
             }
-            const realH = (topRow !== null && bottomRow !== null) ? (bottomRow - topRow + 1) : boxHeight;
+            const realH = (topRow !== null && bottomRow !== null) ? (bottomRow - topRow + 1) : origH;
 
+            // Плотность для жирности
             let textPixels = 0, totalPixels = 0;
             for (let py = startY; py < endY; py++) {
-                for (let px = Math.floor(x0); px < Math.ceil(x1); px++) {
+                for (let px = Math.floor(origBox.x0); px < Math.ceil(origBox.x1); px++) {
                     if (px < 0 || px >= naturalWidth || py < 0 || py >= naturalHeight) continue;
                     if (bwImageData.data[(py * naturalWidth + px) * 4] < 128) textPixels++;
                     totalPixels++;
@@ -786,41 +910,60 @@ document.addEventListener('DOMContentLoaded', () => {
             const fillRatio = totalPixels > 0 ? textPixels / totalPixels : 0;
             const fontWeight = fillRatio > 0.30 ? 700 : (fillRatio > 0.22 ? 500 : 400);
 
+            // ТОЧКА 1: подбираем размер шрифта, при котором переведённый текст влезает
             let fontSize = Math.max(Math.floor(realH * 0.95), 8);
             ctx.font = `${fontWeight} ${fontSize}px Arial, "Segoe UI", sans-serif`;
             let textWidth = ctx.measureText(line.translatedText).width;
-            while (textWidth > boxWidth - 2 && fontSize > 6) {
+
+            // Уменьшение шрифта, если не влезает
+            while (textWidth > origW - 2 && fontSize > 8) {
                 fontSize--;
                 ctx.font = `${fontWeight} ${fontSize}px Arial, "Segoe UI", sans-serif`;
                 textWidth = ctx.measureText(line.translatedText).width;
             }
 
-            const getAvgColor = (xS, yS, xE, yE) => {
-                let sR = 0, sG = 0, sB = 0, cnt = 0;
-                for (let py = Math.max(0, Math.floor(yS)); py < Math.min(naturalHeight, Math.ceil(yE)); py++) {
-                    for (let px = Math.max(0, Math.floor(xS)); px < Math.min(naturalWidth, Math.ceil(xE)); px++) {
-                        const idx = (py * naturalWidth + px) * 4;
-                        if (bwImageData.data[idx] < 128) {
-                            sR += originalImageData.data[idx];
-                            sG += originalImageData.data[idx+1];
-                            sB += originalImageData.data[idx+2];
-                            cnt++;
-                        }
-                    }
-                }
-                return cnt > 0 ? `rgb(${Math.round(sR/cnt)}, ${Math.round(sG/cnt)}, ${Math.round(sB/cnt)})` : null;
-            };
+            // ТОЧКА 2: определяем ФИНАЛЬНЫЙ bbox для заливки фона
+            // Если текст всё ещё шире оригинала, расширяем bbox симметрично,
+            // но не более чем в 2 раза от оригинала, и не выходя за границы изображения.
+            let finalBox;
+            if (textWidth <= origW - 2) {
+                // Помещается — используем оригинальный bbox
+                finalBox = { ...origBox };
+            } else {
+                // Расширяем по горизонтали
+                const centerX = (origBox.x0 + origBox.x1) / 2;
+                const neededWidth = Math.min(textWidth + 4, origW * 2);
+                const halfW = neededWidth / 2;
+                let nx0 = centerX - halfW;
+                let nx1 = centerX + halfW;
+                // Клипаем по границам изображения
+                if (nx0 < 0) { nx1 += -nx0; nx0 = 0; }
+                if (nx1 > naturalWidth) { nx0 -= (nx1 - naturalWidth); nx1 = naturalWidth; }
+                nx0 = Math.max(0, nx0);
+                finalBox = {
+                    x0: nx0,
+                    y0: origBox.y0,
+                    x1: nx1,
+                    y1: origBox.y1
+                };
+            }
 
-            const lp = Math.min(boxWidth * 0.25, 12);
-            const cL = getAvgColor(x0, y0, x0 + lp, y1) || getAvgColor(x1 - lp, y0, x1, y1) || '#000000';
-            const cR = getAvgColor(x1 - lp, y0, x1, y1) || cL;
-            const grad = ctx.createLinearGradient(x0, y0, x1, y0);
-            grad.addColorStop(0, cL);
-            grad.addColorStop(1, cR);
-            ctx.fillStyle = grad;
+            // ТОЧКА 3: инпейнтим ИМЕННО финальный bbox — под новым текстом
+            inpaintRegion(finalBox.x0, finalBox.y0, finalBox.x1, finalBox.y1);
 
+            // ТОЧКА 4: градиент
+            const gradientOrColor = buildTextGradient(line, originalImageData, bwImageData, naturalWidth, naturalHeight);
+            if (typeof gradientOrColor === 'function') {
+                ctx.fillStyle = gradientOrColor(ctx);
+            } else {
+                ctx.fillStyle = gradientOrColor;
+            }
+
+            // ТОЧКА 5: рисуем текст в финальном bbox
+            const finalW = finalBox.x1 - finalBox.x0;
+            const finalH = finalBox.y1 - finalBox.y0;
             ctx.textBaseline = 'middle';
-            ctx.fillText(line.translatedText, x0 + 1, y0 + boxHeight / 2, boxWidth - 2);
+            ctx.fillText(line.translatedText, finalBox.x0 + 1, finalBox.y0 + finalH / 2, finalW - 2);
         }
 
         return {
@@ -882,9 +1025,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
-                    // ИСПРАВЛЕНО: получаем jsPDF из window.jspdf
                     if (!window.jspdf || !window.jspdf.jsPDF) {
-                        throw new Error('jsPDF library not loaded. Check that jspdf.umd.min.js is included.');
+                        throw new Error('jsPDF library not loaded.');
                     }
                     const { jsPDF } = window.jspdf;
 
