@@ -13,13 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const listenSourceBtn = document.getElementById('listenSourceBtn');
     const listenTargetBtn = document.getElementById('listenTargetBtn');
 
-    // Tab Elements
     const tabBtns = document.querySelectorAll('.tab-btn');
     const textTab = document.getElementById('textTab');
     const documentTab = document.getElementById('documentTab');
     const imageTab = document.getElementById('imageTab');
 
-    // File Elements
     const dropZone = document.getElementById('dropZone');
     const fileInput = document.getElementById('fileInput');
     const browseBtn = document.getElementById('browseBtn');
@@ -33,7 +31,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadArea = document.getElementById('downloadArea');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    // Image Elements
     const imageDropZone = document.getElementById('imageDropZone');
     const imageInput = document.getElementById('imageInput');
     const imageBrowseBtn = document.getElementById('imageBrowseBtn');
@@ -52,17 +49,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewOriginalBtn = document.getElementById('viewOriginalBtn');
     const viewTranslatedBtn = document.getElementById('viewTranslatedBtn');
 
-    // Theme Elements
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = themeToggle.querySelector('i');
 
-    // Theme Logic
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);
-    
+
     const themeDropdown = document.getElementById('themeDropdown');
     const themeList = document.getElementById('themeList');
-    
+
     themeToggle.addEventListener('click', (e) => {
         e.stopPropagation();
         themeDropdown.classList.toggle('open');
@@ -78,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         item.addEventListener('click', () => {
             const newTheme = item.dataset.value;
             localStorage.setItem('theme', newTheme);
-            // Перезагрузка страницы для предотвращения лагов
+            // Перезагрузка страницы во избежание лагов
             location.reload();
         });
     });
@@ -89,18 +84,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // State
     const MAX_CHARS = 5000;
-    let currentMode = 'text'; 
+    let currentMode = 'text';
     let currentFile = null;
     let currentImageFile = null;
     let currentObjectURL = null;
 
     const LANGUAGES = {
-        "af": "Afrikaans", "sq": "Albanian", "am": "Amharic", "ar": "Arabic", "hy": "Armenian", "as": "Assamese", "ay": "Aymara", "az": "Azerbaijani", "bm": "Bambara", "ba": "Bashkir", "eu": "Basque", "be": "Belarusian", "bn": "Bengali", "bho": "Bhojpuri", "bs": "Bosnian", "bg": "Bulgarian", "ca": "Catalan", "ceb": "Cebuano", "ny": "Chichewa", "zh-CN": "Chinese (Simp)", "zh-TW": "Chinese (Trad)", "cv": "Chuvash", "co": "Corsican", "hr": "Croatian", "cs": "Czech", "da": "Danish", "dv": "Dhivehi", "doi": "Dogri", "nl": "Dutch", "en": "English", "en-US": "English (US)", "en-GB": "English (UK)", "eo": "Esperanto", "et": "Estonian", "ee": "Ewe", "tl": "Filipino", "fi": "Finnish", "fr": "French", "fy": "Frisian", "gl": "Galician", "ka": "Georgian", "de": "German", "el": "Greek", "gn": "Guarani", "gu": "Gujarati", "ht": "Haitian Creole", "ha": "Hausa", "haw": "Hawaiian", "iw": "Hebrew", "hi": "Hindi", "hmn": "Hmong", "hu": "Hungarian", "is": "Icelandic", "ig": "Igbo", "ilo": "Ilocano", "id": "Indonesian", "ga": "Irish", "it": "Italian", "ja": "Japanese", "jw": "Javanese", "kn": "Kannada", "kk": "Kazakh", "km": "Khmer", "rw": "Kinyarwanda", "gom": "Konkani", "ko": "Korean", "kri": "Krio", "ku": "Kurdish (Kurmanji)", "ckb": "Kurdish (Sorani)", "ky": "Kyrgyz", "lo": "Lao", "la": "Latin", "lv": "Latvian", "ln": "Lingala", "lt": "Lithuanian", "lg": "Luganda", "lb": "Luxembourgish", "mk": "Macedonian", "mai": "Maithili", "mg": "Malagasy", "ms": "Malay", "ml": "Malayalam", "mt": "Maltese", "mi": "Maori", "mr": "Marathi", "mni": "Meiteilon (Manipuri)", "lus": "Mizo", "mn": "Mongolian", "my": "Myanmar (Burmese)", "ne": "Nepali", "no": "Norwegian", "or": "Odia (Oriya)", "om": "Oromo", "os": "Ossetian", "ps": "Pashto", "fa": "Persian", "pl": "Polish", "pt": "Portuguese", "pa": "Punjabi", "qu": "Quechua", "ro": "Romanian", "ru": "Russian", "sm": "Samoan", "sa": "Sanskrit", "gd": "Scots Gaelic", "nso": "Sepedi", "sr": "Serbian", "st": "Sesotho", "sn": "Shona", "sd": "Sindhi", "si": "Identity", "sk": "Slovak", "sl": "Slovenian", "so": "Somali", "es": "Spanish", "su": "Sundanese", "sw": "Swahili", "sv": "Swedish", "tg": "Tajik", "ta": "Tamil", "tt": "Tatar", "te": "Telugu", "th": "Thai", "ti": "Tigrinya", "ts": "Tsonga", "tr": "Turkish", "tk": "Turkmen", "ak": "Twi (Akan)", "uk": "Ukrainian", "ur": "Urdu", "ug": "Uyghur", "uz": "Uzbek", "vi": "Vietnamese", "cy": "Welsh", "xh": "Xhosa", "sah": "Yakut", "yi": "Yiddish", "yo": "Yoruba", "zu": "Zulu"
+        "af": "Afrikaans", "sq": "Albanian", "am": "Amharic", "ar": "Arabic", "hy": "Armenian", "as": "Assamese", "ay": "Aymara", "az": "Azerbaijani", "bm": "Bambara", "ba": "Bashkir", "eu": "Basque", "be": "Belarusian", "bn": "Bengali", "bho": "Bhojpuri", "bs": "Bosnian", "bg": "Bulgarian", "ca": "Catalan", "ceb": "Cebuano", "ny": "Chichewa", "zh-CN": "Chinese (Simp)", "zh-TW": "Chinese (Trad)", "cv": "Chuvash", "co": "Corsican", "hr": "Croatian", "cs": "Czech", "da": "Danish", "dv": "Dhivehi", "doi": "Dogri", "nl": "Dutch", "en": "English", "en-US": "English (US)", "en-GB": "English (UK)", "eo": "Esperanto", "et": "Estonian", "ee": "Ewe", "tl": "Filipino", "fi": "Finnish", "fr": "French", "fy": "Frisian", "gl": "Galician", "ka": "Georgian", "de": "German", "el": "Greek", "gn": "Guarani", "gu": "Gujarati", "ht": "Haitian Creole", "ha": "Hausa", "haw": "Hawaiian", "iw": "Hebrew", "hi": "Hindi", "hmn": "Hmong", "hu": "Hungarian", "is": "Icelandic", "ig": "Igbo", "ilo": "Ilocano", "id": "Indonesian", "ga": "Irish", "it": "Italian", "ja": "Japanese", "jw": "Javanese", "kn": "Kannada", "kk": "Kazakh", "km": "Khmer", "rw": "Kinyarwanda", "gom": "Konkani", "ko": "Korean", "kri": "Krio", "ku": "Kurdish (Kurmanji)", "ckb": "Kurdish (Sorani)", "ky": "Kyrgyz", "lo": "Lao", "la": "Latin", "lv": "Latvian", "ln": "Lingala", "lt": "Lithuanian", "lg": "Luganda", "lb": "Luxembourgish", "mk": "Macedonian", "mai": "Maithili", "mg": "Malagasy", "ms": "Malay", "ml": "Malayalam", "mt": "Maltese", "mi": "Maori", "mr": "Marathi", "mni": "Meiteilon (Manipuri)", "lus": "Mizo", "mn": "Mongolian", "my": "Myanmar (Burmese)", "ne": "Nepali", "no": "Norwegian", "or": "Odia (Oriya)", "om": "Oromo", "os": "Ossetian", "ps": "Pashto", "fa": "Persian", "pl": "Polish", "pt": "Portuguese", "pa": "Punjabi", "qu": "Quechua", "ro": "Romanian", "ru": "Russian", "sm": "Samoan", "sa": "Sanskrit", "gd": "Scots Gaelic", "nso": "Sepedi", "sr": "Serbian", "st": "Sesotho", "sn": "Shona", "sd": "Sindhi", "si": "Sinhala", "sk": "Slovak", "sl": "Slovenian", "so": "Somali", "es": "Spanish", "su": "Sundanese", "sw": "Swahili", "sv": "Swedish", "tg": "Tajik", "ta": "Tamil", "tt": "Tatar", "te": "Telugu", "th": "Thai", "ti": "Tigrinya", "ts": "Tsonga", "tr": "Turkish", "tk": "Turkmen", "ak": "Twi (Akan)", "uk": "Ukrainian", "ur": "Urdu", "ug": "Uyghur", "uz": "Uzbek", "vi": "Vietnamese", "cy": "Welsh", "xh": "Xhosa", "sah": "Yakut", "yi": "Yiddish", "yo": "Yoruba", "zu": "Zulu"
     };
 
-    // Debounce Function
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -117,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentMode === 'text') translateText();
     }, 500);
 
-    // Character Counter
     sourceText.addEventListener('input', () => {
         let text = sourceText.value;
         if (text.length > MAX_CHARS) {
@@ -125,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
             text = sourceText.value;
         }
         charCount.textContent = text.length;
-        
+
         if (text.trim()) {
             debouncedTranslate();
         } else {
@@ -134,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Clear Button
     clearBtn.addEventListener('click', () => {
         sourceText.value = '';
         targetText.value = '';
@@ -143,7 +134,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('dictionaryContainer').classList.add('hidden');
     });
 
-    // Custom Dropdown Logic
     const setupDropdown = (dropdown, defaultLang, isSource = false) => {
         const header = dropdown.querySelector('.dropdown-header');
         const selectedSpan = dropdown.querySelector('.selected-lang');
@@ -192,14 +182,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 item.classList.add('active');
 
                 dropdown.classList.remove('open');
-                // Placeholder больше не меняется, оставляем универсальный
                 if (sourceText.value.trim()) translateText();
             });
         });
     };
 
+    // ИСПРАВЛЕНО: источник по умолчанию auto — для OCR и перевода
     setupDropdown(sourceDropdown, 'auto', true);
-    setupDropdown(targetDropdown, 'en-US', false);
+    setupDropdown(targetDropdown, 'ru', false);
 
     const supportedLangCount = Object.keys(LANGUAGES).length;
     document.getElementById('supportedCount').textContent = `Supports ${supportedLangCount} languages`;
@@ -217,19 +207,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetItem = Array.from(items).find(i => i.getAttribute('data-value') === value);
         if (targetItem) {
             selectedSpan.classList.add('fade');
-            
+
             setTimeout(() => {
                 selectedSpan.textContent = targetItem.textContent;
                 selectedSpan.setAttribute('data-value', value);
                 items.forEach(i => i.classList.remove('active'));
                 targetItem.classList.add('active');
-                
+
                 setTimeout(() => selectedSpan.classList.remove('fade'), 300);
             }, 150);
         }
     };
 
-    // Swap button
+    // Swap button — поворот на 180°
     swapBtn.addEventListener('click', () => {
         const sourceSpan = sourceDropdown.querySelector('.selected-lang');
         const targetSpan = targetDropdown.querySelector('.selected-lang');
@@ -244,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sourceSpan.classList.add('fade');
         targetSpan.classList.add('fade');
-        
+
         sourceText.style.transition = 'opacity 0.4s ease, transform 0.3s ease';
         targetText.style.transition = 'opacity 0.4s ease, transform 0.3s ease';
         sourceText.style.opacity = '0.7';
@@ -267,16 +257,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const tempText = sourceText.value;
             sourceText.value = targetText.value;
             targetText.value = tempText;
-            
+
             setTimeout(() => {
                 sourceText.style.transition = 'opacity 0.5s ease, transform 0.4s ease';
                 targetText.style.transition = 'opacity 0.5s ease, transform 0.4s ease';
                 sourceText.style.opacity = '1';
                 targetText.style.opacity = '1';
-                
+
                 sourceText.style.transform = 'scale(1.02)';
                 targetText.style.transform = 'scale(1.02)';
-                
+
                 setTimeout(() => {
                     sourceText.style.transform = 'scale(1)';
                     targetText.style.transform = 'scale(1)';
@@ -292,12 +282,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 200);
     });
 
-    // Placeholder всегда один и тот же
+    // Placeholder всегда "Enter text..." и не меняется при swap
     sourceText.placeholder = 'Enter text...';
 
     copyBtn.addEventListener('click', async () => {
         if (!targetText.value) return;
-
         try {
             await navigator.clipboard.writeText(targetText.value);
             copyFeedback.classList.add('show');
@@ -314,22 +303,13 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Your browser does not support text-to-speech.');
             return;
         }
-
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        
-        const langMap = {
-            'iw': 'he',
-            'zh-CN': 'zh-Hans',
-            'zh-TW': 'zh-Hant'
-        };
+        const langMap = { 'iw': 'he', 'zh-CN': 'zh-Hans', 'zh-TW': 'zh-Hant' };
         utterance.lang = langMap[lang] || lang;
-
         btn.classList.add('speaking');
-        
         utterance.onend = () => btn.classList.remove('speaking');
         utterance.onerror = () => btn.classList.remove('speaking');
-
         window.speechSynthesis.speak(utterance);
     };
 
@@ -343,14 +323,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (text) speak(text, getTargetLang(), listenTargetBtn);
     });
 
-    // Tab switching with slide animation
+    // Переключение вкладок с анимацией слайда
     function switchTab(tabName) {
         if (currentMode === tabName) return;
         const direction = getDirection(currentMode, tabName);
-        
+
         const oldContent = document.querySelector(`#${currentMode}Tab`);
         const newContent = document.querySelector(`#${tabName}Tab`);
-        
+
         if (!oldContent || !newContent) return;
 
         const translateOut = direction === 'left' ? '-30px' : '30px';
@@ -359,17 +339,17 @@ document.addEventListener('DOMContentLoaded', () => {
         oldContent.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
         oldContent.style.opacity = '0';
         oldContent.style.transform = `translateX(${translateOut})`;
-        
+
         setTimeout(() => {
             oldContent.classList.remove('active');
             oldContent.style.display = 'none';
-            
+
             newContent.style.display = 'block';
             newContent.style.transition = 'none';
             newContent.style.opacity = '0';
             newContent.style.transform = `translateX(${translateIn})`;
             void newContent.offsetWidth;
-            
+
             newContent.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
             newContent.style.opacity = '1';
             newContent.style.transform = 'translateX(0)';
@@ -425,7 +405,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tabsContainer.scrollLeft = scrollLeft - walk;
     });
 
-    // Touch‑drag для мобильных
     tabsContainer.addEventListener('touchstart', (e) => {
         startX = e.touches[0].clientX;
         scrollLeft = tabsContainer.scrollLeft;
@@ -437,7 +416,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tabsContainer.scrollLeft = scrollLeft - walk;
     });
 
-    // File and image upload handlers
     browseBtn.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', (e) => {
@@ -549,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(file);
     };
 
-    // Перевод текста (словарь всегда показывается)
+    // Перевод текста
     const translateText = async () => {
         const text = sourceText.value.trim();
         if (!text) {
@@ -569,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             const dictionaryContainer = document.getElementById('dictionaryContainer');
-            
+
             if (data && data[0]) {
                 const translatedText = data[0].map(chunk => chunk[0] || '').join('');
                 targetText.value = translatedText;
@@ -580,15 +558,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data[1]) {
                     let dictHTML = '';
                     let entryIndex = 1;
-                    
+
                     data[1].forEach(posGroup => {
-                        const terms = posGroup[2]; 
-                        
+                        const terms = posGroup[2];
                         if (terms) {
                             terms.forEach(termData => {
                                 const term = termData[0];
                                 const reverseTranslations = termData[1] || [];
-                                
                                 dictHTML += `
                                 <div class="dict-entry">
                                     <div class="dict-number">${entryIndex}</div>
@@ -603,12 +579,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             });
                         }
                     });
-                    
+
                     if (dictHTML) {
                         const partOfSpeech = (data[1] && data[1][0] && data[1][0][0]) ? data[1][0][0] : '';
                         dictHeader.innerHTML = `<span class="dict-word">${text.toLowerCase()}</span> <span class="dict-pos">${partOfSpeech}</span>`;
                         dictEntries.innerHTML = dictHTML;
-                        
                         dictionaryContainer.classList.remove('hidden');
                     } else {
                         dictionaryContainer.classList.add('hidden');
@@ -619,19 +594,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } else {
                 targetText.value = "Error translating text. Please try again later.";
-                if(dictionaryContainer) dictionaryContainer.classList.add('hidden');
+                if (dictionaryContainer) dictionaryContainer.classList.add('hidden');
             }
         } catch (error) {
             console.error('Translation error:', error);
             targetText.value = "Network error or text too long. Try translating a smaller text.";
             const dictionaryContainer = document.getElementById('dictionaryContainer');
-            if(dictionaryContainer) dictionaryContainer.classList.add('hidden');
+            if (dictionaryContainer) dictionaryContainer.classList.add('hidden');
         } finally {
             loadingOverlay.classList.remove('active');
         }
     };
 
-    // Перевод документов (GET‑запросы, полностью рабочий)
+    // Перевод документов — PDF сохраняется как HTML (чтобы не было символов-кракозябр)
     const translateDocument = async () => {
         if (!currentFile) {
             alert('Please select a file to translate.');
@@ -661,7 +636,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (end < text.length) {
                     const slice = text.slice(i, end);
                     let splitFound = false;
-
                     for (let char of ['\n', '. ', '? ', '! ']) {
                         const idx = slice.lastIndexOf(char);
                         if (idx !== -1 && idx > slice.length * 0.5) {
@@ -670,7 +644,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             break;
                         }
                     }
-
                     if (!splitFound) {
                         const lastSpace = slice.lastIndexOf(' ');
                         if (lastSpace !== -1 && lastSpace > slice.length * 0.5) {
@@ -683,10 +656,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             progressText.textContent = `Translating ${chunks.length} chunks...`;
-            
+
             const translatedChunks = new Array(chunks.length);
             let completedChunks = 0;
-            
+
             const translateChunk = async (chunk, index) => {
                 try {
                     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(chunk)}`;
@@ -695,11 +668,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data && data[0]) {
                         translatedChunks[index] = data[0].map(c => c[0] || '').join('');
                     } else {
-                        translatedChunks[index] = chunk; 
+                        translatedChunks[index] = chunk;
                     }
                 } catch (err) {
                     console.error('Error translating chunk', index, err);
-                    translatedChunks[index] = chunk; 
+                    translatedChunks[index] = chunk;
                 } finally {
                     completedChunks++;
                     const percent = Math.round((completedChunks / chunks.length) * 100);
@@ -725,33 +698,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const ext = currentFile.name.toLowerCase().endsWith('.pdf') ? '.pdf' : (lastDot !== -1 ? currentFile.name.substring(lastDot) : '.txt');
 
             if (ext === '.pdf') {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                const margin = 10;
-                const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
-                const textLines = doc.splitTextToSize(translatedContent, doc.internal.pageSize.width - margin * 2);
-                
-                let cursorY = margin;
-                for (let k = 0; k < textLines.length; k++) {
-                    if (cursorY > pageHeight - margin) {
-                        doc.addPage();
-                        cursorY = margin;
-                    }
-                    doc.text(textLines[k], margin, cursorY);
-                    cursorY += 7; 
-                }
-                
-                const blob = doc.output('blob');
+                // ВАЖНО: сохраняем как HTML — кириллица отображается идеально, jsPDF её не поддерживает
+                const escaped = translatedContent
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                const htmlContent = `<!DOCTYPE html>
+<html lang="${targetLang}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Translated Document</title>
+<style>
+  body { font-family: 'Times New Roman', 'Noto Sans', Arial, sans-serif; line-height: 1.7; padding: 40px; max-width: 900px; margin: 0 auto; color: #222; background: #fff; }
+  p { margin: 0 0 14px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+${escaped.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
+</body>
+</html>`;
+                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
                 currentObjectURL = URL.createObjectURL(blob);
                 downloadBtn.href = currentObjectURL;
+                downloadBtn.download = `${name}_${targetLang}.html`;
             } else {
                 const blob = new Blob([translatedContent], { type: 'text/plain;charset=utf-8' });
                 currentObjectURL = URL.createObjectURL(blob);
                 downloadBtn.href = currentObjectURL;
+                downloadBtn.download = `${name}_${targetLang}${ext}`;
             }
-
-            downloadBtn.download = `${name}_${targetLang}${ext}`;
 
             translationProgress.classList.add('hidden');
             downloadArea.classList.remove('hidden');
@@ -804,33 +780,31 @@ document.addEventListener('DOMContentLoaded', () => {
         overlayLayer.innerHTML = '';
         imageProgressFill.style.width = '0%';
         imageProgressText.textContent = 'Scanning image...';
-        
-
 
         const getAverageTextColor = (imgData, maskData, xStart, yStart, xEnd, yEnd, natW, natH) => {
             let sumR = 0, sumG = 0, sumB = 0, count = 0;
             for (let py = Math.max(0, Math.floor(yStart)); py < Math.min(natH, Math.ceil(yEnd)); py++) {
                 for (let px = Math.max(0, Math.floor(xStart)); px < Math.min(natW, Math.ceil(xEnd)); px++) {
                     const idx = (py * natW + px) * 4;
-                    if (maskData.data[idx] < 128) { 
+                    if (maskData.data[idx] < 128) {
                         sumR += imgData.data[idx];
-                        sumG += imgData.data[idx+1];
-                        sumB += imgData.data[idx+2];
+                        sumG += imgData.data[idx + 1];
+                        sumB += imgData.data[idx + 2];
                         count++;
                     }
                 }
             }
             if (count === 0) return null;
-            return `rgb(${Math.round(sumR/count)}, ${Math.round(sumG/count)}, ${Math.round(sumB/count)})`;
+            return `rgb(${Math.round(sumR / count)}, ${Math.round(sumG / count)}, ${Math.round(sumB / count)})`;
         };
 
         const matchFontWeight = (fillRatio) => {
             if (fillRatio > 0.38) return 900;
             if (fillRatio > 0.34) return 800;
-            if (fillRatio > 0.30) return 700; 
+            if (fillRatio > 0.30) return 700;
             if (fillRatio > 0.26) return 600;
             if (fillRatio > 0.22) return 500;
-            return 400; 
+            return 400;
         };
 
         const clearTextBackground = (x0, y0, x1, y1) => {
@@ -843,7 +817,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const regionWidth = ex1 - ex0;
             const regionHeight = ey1 - ey0;
 
-            if (regionWidth <= 0 || regionHeight <= 0) return [0,0,0];
+            if (regionWidth <= 0 || regionHeight <= 0) return [0, 0, 0];
 
             const regionImageData = ctx.getImageData(ex0, ey0, regionWidth, regionHeight);
             const regionData = regionImageData.data;
@@ -858,24 +832,24 @@ document.addEventListener('DOMContentLoaded', () => {
                         const idx = (sy * naturalWidth + sx) * 4;
                         if (bwImageData.data[idx] < 128) continue;
                         r += originalImageData.data[idx];
-                        g += originalImageData.data[idx+1];
-                        b += originalImageData.data[idx+2];
+                        g += originalImageData.data[idx + 1];
+                        b += originalImageData.data[idx + 2];
                         count++;
                     }
                 }
-                return count > 0 ? [Math.round(r/count), Math.round(g/count), Math.round(b/count)] : null;
+                return count > 0 ? [Math.round(r / count), Math.round(g / count), Math.round(b / count)] : null;
             }
 
-            const tl = sampleCornerColor(ex0, ey0) || [0,0,0];
-            const tr = sampleCornerColor(ex1-1, ey0) || [0,0,0];
-            const bl = sampleCornerColor(ex0, ey1-1) || [0,0,0];
-            const br = sampleCornerColor(ex1-1, ey1-1) || [0,0,0];
+            const tl = sampleCornerColor(ex0, ey0) || [0, 0, 0];
+            const tr = sampleCornerColor(ex1 - 1, ey0) || [0, 0, 0];
+            const bl = sampleCornerColor(ex0, ey1 - 1) || [0, 0, 0];
+            const br = sampleCornerColor(ex1 - 1, ey1 - 1) || [0, 0, 0];
 
             if (regionWidth <= 1 || regionHeight <= 1) {
                 const avgColor = [
-                    Math.round((tl[0]+tr[0]+bl[0]+br[0])/4),
-                    Math.round((tl[1]+tr[1]+bl[1]+br[1])/4),
-                    Math.round((tl[2]+tr[2]+bl[2]+br[2])/4)
+                    Math.round((tl[0] + tr[0] + bl[0] + br[0]) / 4),
+                    Math.round((tl[1] + tr[1] + bl[1] + br[1]) / 4),
+                    Math.round((tl[2] + tr[2] + bl[2] + br[2]) / 4)
                 ];
                 for (let y = 0; y < regionHeight; y++) {
                     const py = ey0 + y;
@@ -895,9 +869,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (shouldErase) {
                             const idx = (y * regionWidth + x) * 4;
                             regionData[idx] = avgColor[0];
-                            regionData[idx+1] = avgColor[1];
-                            regionData[idx+2] = avgColor[2];
-                            regionData[idx+3] = 255;
+                            regionData[idx + 1] = avgColor[1];
+                            regionData[idx + 2] = avgColor[2];
+                            regionData[idx + 3] = 255;
                         }
                     }
                 }
@@ -911,7 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 for (let x = 0; x < regionWidth; x++) {
                     const px = ex0 + x;
                     const fx = x / (regionWidth - 1);
-                    
+
                     const r = Math.round(
                         (1 - fx) * (1 - fy) * tl[0] +
                         fx * (1 - fy) * tr[0] +
@@ -946,9 +920,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (shouldErase) {
                         const idx = (y * regionWidth + x) * 4;
                         regionData[idx] = r;
-                        regionData[idx+1] = g;
-                        regionData[idx+2] = b;
-                        regionData[idx+3] = 255;
+                        regionData[idx + 1] = g;
+                        regionData[idx + 2] = b;
+                        regionData[idx + 3] = 255;
                     }
                 }
             }
@@ -958,11 +932,20 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
+            // Расширенная карта языков для OCR + eng+rus при auto
             const tessLangMap = {
-                'en': 'eng', 'ru': 'rus', 'es': 'spa', 'fr': 'fra', 'de': 'deu', 
-                'it': 'ita', 'pt': 'por', 'zh-CN': 'chi_sim', 'ja': 'jpn', 'ko': 'kor'
+                'en': 'eng', 'en-US': 'eng', 'en-GB': 'eng',
+                'ru': 'rus', 'uk': 'ukr', 'be': 'bel',
+                'es': 'spa', 'fr': 'fra', 'de': 'deu', 'it': 'ita', 'pt': 'por',
+                'zh-CN': 'chi_sim', 'zh-TW': 'chi_tra', 'ja': 'jpn', 'ko': 'kor',
+                'ar': 'ara', 'fa': 'fas', 'tr': 'tur', 'pl': 'pol', 'nl': 'nld',
+                'cs': 'ces', 'sv': 'swe', 'da': 'dan', 'fi': 'fin', 'no': 'nor',
+                'el': 'ell', 'he': 'heb', 'hi': 'hin', 'th': 'tha', 'vi': 'vie'
             };
-            const tessLang = tessLangMap[sourceLang] || 'eng';
+            let tessLang = tessLangMap[sourceLang];
+            if (!tessLang || sourceLang === 'auto') {
+                tessLang = 'eng+rus';
+            }
 
             const originalDataUrl = imagePreview.src;
 
@@ -983,7 +966,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const gray = new Uint8Array(w * h);
                     for (let i = 0; i < w * h; i++) {
-                        gray[i] = Math.round(0.299 * pix[i*4] + 0.587 * pix[i*4+1] + 0.114 * pix[i*4+2]);
+                        gray[i] = Math.round(0.299 * pix[i * 4] + 0.587 * pix[i * 4 + 1] + 0.114 * pix[i * 4 + 2]);
                     }
 
                     const hist = new Int32Array(256);
@@ -1006,8 +989,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     for (let i = 0; i < w * h; i++) {
                         const v = gray[i] < threshold ? 0 : 255;
-                        pix[i*4] = pix[i*4+1] = pix[i*4+2] = v;
-                        pix[i*4+3] = 255;
+                        pix[i * 4] = pix[i * 4 + 1] = pix[i * 4 + 2] = v;
+                        pix[i * 4 + 3] = 255;
                     }
                     c.putImageData(imgData, 0, 0);
 
@@ -1018,8 +1001,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (blackPixels > (total / 2)) {
                         for (let i = 0; i < pix.length; i += 4) {
                             pix[i] = 255 - pix[i];
-                            pix[i+1] = 255 - pix[i+1];
-                            pix[i+2] = 255 - pix[i+2];
+                            pix[i + 1] = 255 - pix[i + 1];
+                            pix[i + 2] = 255 - pix[i + 2];
                         }
                         c.putImageData(imgData, 0, 0);
                     }
@@ -1072,9 +1055,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0);
             const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
-            
-            // Объявляем переменную bwImageData для использования в clearTextBackground
-            const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
 
             const validWords = [];
             words.forEach(word => {
@@ -1096,61 +1076,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const bw = Math.max(x1 - x0, 1);
                 const bh = Math.max(y1 - y0, 1);
                 if (bh < 5 || bw < 5) return;
-                
-                // Проверка на залитые фигуры
-                const bwPixels = bwCtx.getImageData(
-                    Math.max(x0, 0), Math.max(y0, 0),
-                    Math.min(bw, bwCanvas.width - x0),
-                    Math.min(bh, bwCanvas.height - y0)
-                ).data;
-                let blackCount = 0;
-                for (let i = 0; i < bwPixels.length; i += 4) {
-                    if (bwPixels[i] < 128) blackCount++;
-                }
-                const blackRatio = blackCount / (bw * bh);
-                if (blackRatio > 0.95) {
-                    console.log(`Фильтр: залитая фигура (${(blackRatio*100).toFixed(0)}%) "${text}"`);
-                    return;
-                }
-                
-                // Проверка на однородность текста (возможный логотип)
-                let colorVariation = 0;
-                let lastColor = null;
-                for (let i = 0; i < bwPixels.length; i += 16) { // Проверяем каждый 4-й пиксель
-                    const r = bwPixels[i];
-                    const g = bwPixels[i+1];
-                    const b = bwPixels[i+2];
-                    const color = `${r},${g},${b}`;
-                    
-                    if (lastColor !== null && lastColor !== color) {
-                        colorVariation++;
-                    }
-                    lastColor = color;
-                }
-                
-                // Если цвет почти не меняется, возможно это логотип
-                if (colorVariation < 3 && text.length < 5) {
-                    console.log(`Фильтр: возможный логотип (низкая вариация цвета) "${text}"`);
-                    return;
-                }
-=======
-                
-                const isOnlyNoise = /^[\W_]+$/u.test(text);
-                if (isOnlyNoise) return;
->>>>>>> parent of ce79611 (Update app.js)
-                
-                const letterCount = (text.match(/\p{L}/gu) || []).length;
-                const digitCount = (text.match(/\d/g) || []).length;
-                
-                if (letterCount < 1 && digitCount < 1) return;
-                
-                const conf = word.confidence || 0;
-                if (conf < 25) return;
-                
-                const { x0, y0, x1, y1 } = word.bbox;
-                const bw = Math.max(x1 - x0, 1);
-                const bh = Math.max(y1 - y0, 1);
-                if (bh < 5 || bw < 5) return;
 
                 const bwPixels = bwCtx.getImageData(
                     Math.max(x0, 0), Math.max(y0, 0),
@@ -1162,12 +1087,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (bwPixels[i] < 128) blackCount++;
                 }
                 const blackRatio = blackCount / (bw * bh);
-
                 if (blackRatio > 0.95) {
-                    console.log(`Фильтр: залитая фигура (${(blackRatio*100).toFixed(0)}%) "${text}"`);
+                    console.log(`Фильтр: залитая фигура (${(blackRatio * 100).toFixed(0)}%) "${text}"`);
                     return;
                 }
-                parent of 8bf0043 (Update app.js)
                 validWords.push({ text, bbox: word.bbox });
             });
 
@@ -1179,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             imageProgressText.textContent = 'Translating text...';
             const textToTranslate = validWords.map(v => v.text).join('\n');
-            
+
             try {
                 const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(textToTranslate)}`;
                 const response = await fetch(url);
@@ -1261,7 +1184,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 gradient.addColorStop(1, colorRight);
                 ctx.fillStyle = gradient;
 
-                const [bgR, bgG, bgB] = cornerColor || [128,128,128];
+                const [bgR, bgG, bgB] = cornerColor || [128, 128, 128];
                 const bgLuminance = (0.299 * bgR + 0.587 * bgG + 0.114 * bgB) / 255;
                 let shadowColor, shadowBlur;
                 if (bgLuminance > 0.6) {
@@ -1314,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Инициализация эффектов Lucid Water
+    // Эффекты Lucid Water — wobble только в этой теме
     function initLucidWaterEffects() {
         const isLucidWater = document.body.getAttribute('data-theme') === 'lucid-water';
         if (!isLucidWater) return;
@@ -1342,7 +1265,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initLucidWaterEffects();
 
-    // Обработчики для изображений (Original/Translated)
     viewOriginalBtn.addEventListener('click', () => {
         if (imagePreview.dataset.originalSrc) {
             imagePreview.src = imagePreview.dataset.originalSrc;
