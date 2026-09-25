@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
+    // ============ DOM ELEMENTS ============
     const sourceText = document.getElementById('sourceText');
     const targetText = document.getElementById('targetText');
     const swapBtn = document.getElementById('swapBtn');
@@ -51,12 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = themeToggle.querySelector('i');
-
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.body.setAttribute('data-theme', savedTheme);
-
     const themeDropdown = document.getElementById('themeDropdown');
     const themeList = document.getElementById('themeList');
+
+    // ============ THEME ============
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.setAttribute('data-theme', savedTheme);
 
     themeToggle.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -64,26 +64,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     themeList.querySelectorAll('li').forEach(item => {
-        if (item.dataset.value === savedTheme) {
-            item.classList.add('selected');
-        } else {
-            item.classList.remove('selected');
-        }
+        if (item.dataset.value === savedTheme) item.classList.add('selected');
+        else item.classList.remove('selected');
 
         item.addEventListener('click', () => {
-            const newTheme = item.dataset.value;
-            localStorage.setItem('theme', newTheme);
-            // Перезагрузка страницы во избежание лагов
+            localStorage.setItem('theme', item.dataset.value);
             location.reload();
         });
     });
 
     document.addEventListener('click', (e) => {
-        if (!themeDropdown.contains(e.target)) {
-            themeDropdown.classList.remove('open');
-        }
+        if (!themeDropdown.contains(e.target)) themeDropdown.classList.remove('open');
     });
 
+    // ============ STATE ============
     const MAX_CHARS = 5000;
     let currentMode = 'text';
     let currentFile = null;
@@ -97,10 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
+            const later = () => { clearTimeout(timeout); func(...args); };
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
@@ -110,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentMode === 'text') translateText();
     }, 500);
 
+    // ============ TEXT INPUT ============
     sourceText.addEventListener('input', () => {
         let text = sourceText.value;
         if (text.length > MAX_CHARS) {
@@ -117,10 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
             text = sourceText.value;
         }
         charCount.textContent = text.length;
-
-        if (text.trim()) {
-            debouncedTranslate();
-        } else {
+        if (text.trim()) debouncedTranslate();
+        else {
             targetText.value = '';
             document.getElementById('dictionaryContainer').classList.add('hidden');
         }
@@ -134,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('dictionaryContainer').classList.add('hidden');
     });
 
+    // ============ DROPDOWNS ============
     const setupDropdown = (dropdown, defaultLang, isSource = false) => {
         const header = dropdown.querySelector('.dropdown-header');
         const selectedSpan = dropdown.querySelector('.selected-lang');
@@ -177,22 +168,18 @@ document.addEventListener('DOMContentLoaded', () => {
             item.addEventListener('click', () => {
                 selectedSpan.textContent = item.textContent;
                 selectedSpan.setAttribute('data-value', item.getAttribute('data-value'));
-
                 items.forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
-
                 dropdown.classList.remove('open');
                 if (sourceText.value.trim()) translateText();
             });
         });
     };
 
-    // ИСПРАВЛЕНО: источник по умолчанию auto — для OCR и перевода
     setupDropdown(sourceDropdown, 'auto', true);
     setupDropdown(targetDropdown, 'ru', false);
 
-    const supportedLangCount = Object.keys(LANGUAGES).length;
-    document.getElementById('supportedCount').textContent = `Supports ${supportedLangCount} languages`;
+    document.getElementById('supportedCount').textContent = `Supports ${Object.keys(LANGUAGES).length} languages`;
 
     document.addEventListener('click', () => {
         document.querySelectorAll('.custom-dropdown').forEach(d => d.classList.remove('open'));
@@ -207,19 +194,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const targetItem = Array.from(items).find(i => i.getAttribute('data-value') === value);
         if (targetItem) {
             selectedSpan.classList.add('fade');
-
             setTimeout(() => {
                 selectedSpan.textContent = targetItem.textContent;
                 selectedSpan.setAttribute('data-value', value);
                 items.forEach(i => i.classList.remove('active'));
                 targetItem.classList.add('active');
-
                 setTimeout(() => selectedSpan.classList.remove('fade'), 300);
             }, 150);
         }
     };
 
-    // Swap button — поворот на 180°
+    // ============ SWAP BUTTON ============
     swapBtn.addEventListener('click', () => {
         const sourceSpan = sourceDropdown.querySelector('.selected-lang');
         const targetSpan = targetDropdown.querySelector('.selected-lang');
@@ -234,13 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         sourceSpan.classList.add('fade');
         targetSpan.classList.add('fade');
-
-        sourceText.style.transition = 'opacity 0.4s ease, transform 0.3s ease';
-        targetText.style.transition = 'opacity 0.4s ease, transform 0.3s ease';
         sourceText.style.opacity = '0.7';
         targetText.style.opacity = '0.7';
-        sourceText.style.transform = 'scale(0.98)';
-        targetText.style.transform = 'scale(0.98)';
 
         setTimeout(() => {
             const tempSourceVal = getSourceLang();
@@ -259,50 +239,31 @@ document.addEventListener('DOMContentLoaded', () => {
             targetText.value = tempText;
 
             setTimeout(() => {
-                sourceText.style.transition = 'opacity 0.5s ease, transform 0.4s ease';
-                targetText.style.transition = 'opacity 0.5s ease, transform 0.4s ease';
                 sourceText.style.opacity = '1';
                 targetText.style.opacity = '1';
-
-                sourceText.style.transform = 'scale(1.02)';
-                targetText.style.transform = 'scale(1.02)';
-
-                setTimeout(() => {
-                    sourceText.style.transform = 'scale(1)';
-                    targetText.style.transform = 'scale(1)';
-                }, 150);
             }, 200);
 
             charCount.textContent = sourceText.value.length;
-
             sourceSpan.classList.remove('fade');
             targetSpan.classList.remove('fade');
-
             if (sourceText.value.trim()) translateText();
         }, 200);
     });
 
-    // Placeholder всегда "Enter text..." и не меняется при swap
     sourceText.placeholder = 'Enter text...';
 
+    // ============ COPY / SPEAK ============
     copyBtn.addEventListener('click', async () => {
         if (!targetText.value) return;
         try {
             await navigator.clipboard.writeText(targetText.value);
             copyFeedback.classList.add('show');
-            setTimeout(() => {
-                copyFeedback.classList.remove('show');
-            }, 2000);
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
-        }
+            setTimeout(() => copyFeedback.classList.remove('show'), 2000);
+        } catch (err) { console.error(err); }
     });
 
     const speak = (text, lang, btn) => {
-        if (!window.speechSynthesis) {
-            alert('Your browser does not support text-to-speech.');
-            return;
-        }
+        if (!window.speechSynthesis) return;
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         const langMap = { 'iw': 'he', 'zh-CN': 'zh-Hans', 'zh-TW': 'zh-Hant' };
@@ -317,20 +278,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = sourceText.value.trim();
         if (text) speak(text, getSourceLang(), listenSourceBtn);
     });
-
     listenTargetBtn.addEventListener('click', () => {
         const text = targetText.value.trim();
         if (text) speak(text, getTargetLang(), listenTargetBtn);
     });
 
-    // Переключение вкладок с анимацией слайда
+    // ============ TABS ============
     function switchTab(tabName) {
         if (currentMode === tabName) return;
         const direction = getDirection(currentMode, tabName);
-
         const oldContent = document.querySelector(`#${currentMode}Tab`);
         const newContent = document.querySelector(`#${tabName}Tab`);
-
         if (!oldContent || !newContent) return;
 
         const translateOut = direction === 'left' ? '-30px' : '30px';
@@ -343,13 +301,11 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             oldContent.classList.remove('active');
             oldContent.style.display = 'none';
-
             newContent.style.display = 'block';
             newContent.style.transition = 'none';
             newContent.style.opacity = '0';
             newContent.style.transform = `translateX(${translateIn})`;
             void newContent.offsetWidth;
-
             newContent.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
             newContent.style.opacity = '1';
             newContent.style.transform = 'translateX(0)';
@@ -359,44 +315,28 @@ document.addEventListener('DOMContentLoaded', () => {
         tabBtns.forEach(b => b.classList.remove('active'));
         const activeBtn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
         if (activeBtn) activeBtn.classList.add('active');
-
         currentMode = tabName;
     }
 
     function getDirection(from, to) {
         const tabs = ['text', 'document', 'image'];
-        const fromIndex = tabs.indexOf(from);
-        const toIndex = tabs.indexOf(to);
-        return toIndex > fromIndex ? 'left' : 'right';
+        return tabs.indexOf(to) > tabs.indexOf(from) ? 'left' : 'right';
     }
 
     tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            switchTab(btn.getAttribute('data-tab'));
-        });
+        btn.addEventListener('click', () => switchTab(btn.getAttribute('data-tab')));
     });
 
-    // Drag‑to‑scroll для панели вкладок
     const tabsContainer = document.getElementById('tabsContainer');
     let isDown = false, startX, scrollLeft;
-
     tabsContainer.addEventListener('mousedown', (e) => {
         isDown = true;
         tabsContainer.style.cursor = 'grabbing';
         startX = e.pageX - tabsContainer.offsetLeft;
         scrollLeft = tabsContainer.scrollLeft;
     });
-
-    tabsContainer.addEventListener('mouseleave', () => {
-        isDown = false;
-        tabsContainer.style.cursor = 'grab';
-    });
-
-    tabsContainer.addEventListener('mouseup', () => {
-        isDown = false;
-        tabsContainer.style.cursor = 'grab';
-    });
-
+    tabsContainer.addEventListener('mouseleave', () => { isDown = false; tabsContainer.style.cursor = 'grab'; });
+    tabsContainer.addEventListener('mouseup', () => { isDown = false; tabsContainer.style.cursor = 'grab'; });
     tabsContainer.addEventListener('mousemove', (e) => {
         if (!isDown) return;
         e.preventDefault();
@@ -404,33 +344,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const walk = (x - startX) * 2;
         tabsContainer.scrollLeft = scrollLeft - walk;
     });
-
-    tabsContainer.addEventListener('touchstart', (e) => {
-        startX = e.touches[0].clientX;
-        scrollLeft = tabsContainer.scrollLeft;
-    });
-
+    tabsContainer.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; scrollLeft = tabsContainer.scrollLeft; });
     tabsContainer.addEventListener('touchmove', (e) => {
         const x = e.touches[0].clientX;
         const walk = (x - startX) * 2;
         tabsContainer.scrollLeft = scrollLeft - walk;
     });
 
+    // ============ FILE SELECT ============
     browseBtn.addEventListener('click', () => fileInput.click());
-
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) handleFileSelect(e.target.files[0]);
     });
-
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
-
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('dragover');
@@ -444,46 +371,32 @@ document.addEventListener('DOMContentLoaded', () => {
         fileInfo.classList.add('hidden');
         translationProgress.classList.add('hidden');
         downloadArea.classList.add('hidden');
-        if (currentObjectURL) {
-            URL.revokeObjectURL(currentObjectURL);
-            currentObjectURL = null;
-        }
+        if (currentObjectURL) { URL.revokeObjectURL(currentObjectURL); currentObjectURL = null; }
     });
 
     const handleFileSelect = (file) => {
         const validTypes = ['.txt', '.md', '.csv', '.json', '.pdf', '.html', '.xml', '.srt'];
         const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-
         if (!validTypes.includes(ext)) {
-            alert('Please upload a valid text or PDF file (.txt, .md, .csv, .json, .pdf, .html, .xml, .srt)');
+            alert('Please upload a valid file (.txt, .md, .csv, .json, .pdf, .html, .xml, .srt)');
             return;
         }
-
         currentFile = file;
         fileNameDisplay.textContent = file.name;
         uploadPlaceholder.classList.add('hidden');
         fileInfo.classList.remove('hidden');
         translationProgress.classList.add('hidden');
         downloadArea.classList.add('hidden');
-
         translateDocument();
     };
 
+    // ============ IMAGE SELECT ============
     imageBrowseBtn.addEventListener('click', () => imageInput.click());
-
     imageInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) handleImageSelect(e.target.files[0]);
     });
-
-    imageDropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        imageDropZone.classList.add('dragover');
-    });
-
-    imageDropZone.addEventListener('dragleave', () => {
-        imageDropZone.classList.remove('dragover');
-    });
-
+    imageDropZone.addEventListener('dragover', (e) => { e.preventDefault(); imageDropZone.classList.add('dragover'); });
+    imageDropZone.addEventListener('dragleave', () => imageDropZone.classList.remove('dragover'));
     imageDropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         imageDropZone.classList.remove('dragover');
@@ -506,12 +419,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleImageSelect = (file) => {
         const validTypes = ['.png', '.jpg', '.jpeg'];
         const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-
         if (!validTypes.includes(ext)) {
             alert('Please upload a valid image file (.png, .jpg, .jpeg)');
             return;
         }
-
         currentImageFile = file;
         imageFileName.textContent = file.name;
         imageUploadPlaceholder.classList.add('hidden');
@@ -527,7 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(file);
     };
 
-    // Перевод текста
+    // ============ TEXT TRANSLATION ============
     const translateText = async () => {
         const text = sourceText.value.trim();
         if (!text) {
@@ -537,7 +448,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const sourceLang = getSourceLang();
         const targetLang = getTargetLang();
-
         const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&dt=bd&q=${encodeURIComponent(text)}`;
 
         loadingOverlay.classList.add('active');
@@ -545,7 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(url);
             const data = await response.json();
-
             const dictionaryContainer = document.getElementById('dictionaryContainer');
 
             if (data && data[0]) {
@@ -558,7 +467,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data[1]) {
                     let dictHTML = '';
                     let entryIndex = 1;
-
                     data[1].forEach(posGroup => {
                         const terms = posGroup[2];
                         if (terms) {
@@ -569,9 +477,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="dict-entry">
                                     <div class="dict-number">${entryIndex}</div>
                                     <div class="dict-content">
-                                        <div class="dict-terms">
-                                            <span class="dict-term">${term}</span>
-                                        </div>
+                                        <div class="dict-terms"><span class="dict-term">${term}</span></div>
                                         <div class="dict-reverse">${reverseTranslations.join(', ')}</div>
                                     </div>
                                 </div>`;
@@ -585,28 +491,431 @@ document.addEventListener('DOMContentLoaded', () => {
                         dictHeader.innerHTML = `<span class="dict-word">${text.toLowerCase()}</span> <span class="dict-pos">${partOfSpeech}</span>`;
                         dictEntries.innerHTML = dictHTML;
                         dictionaryContainer.classList.remove('hidden');
-                    } else {
-                        dictionaryContainer.classList.add('hidden');
-                    }
-                } else {
-                    dictionaryContainer.classList.add('hidden');
-                }
-
+                    } else dictionaryContainer.classList.add('hidden');
+                } else dictionaryContainer.classList.add('hidden');
             } else {
                 targetText.value = "Error translating text. Please try again later.";
                 if (dictionaryContainer) dictionaryContainer.classList.add('hidden');
             }
         } catch (error) {
             console.error('Translation error:', error);
-            targetText.value = "Network error or text too long. Try translating a smaller text.";
-            const dictionaryContainer = document.getElementById('dictionaryContainer');
-            if (dictionaryContainer) dictionaryContainer.classList.add('hidden');
+            targetText.value = "Network error. Try a smaller text.";
         } finally {
             loadingOverlay.classList.remove('active');
         }
     };
 
-    // Перевод документов — PDF сохраняется как HTML (чтобы не было символов-кракозябр)
+    // ============ SHARED IMAGE PROCESSING HELPER ============
+    // Принимает data URL, делает OCR + перевод + наложение. Возвращает { originalSrc, translatedSrc, translatedText }
+    async function processImageForTranslation(sourceDataUrl, sourceLang, targetLang, onProgress) {
+        // 1. Препроцессинг: grayscale + Otsu → бинарная маска для Tesseract
+        const bwDataUrl = await new Promise((resolve, reject) => {
+            const srcImg = new Image();
+            srcImg.onload = () => {
+                const w = srcImg.naturalWidth;
+                const h = srcImg.naturalHeight;
+                const cvs = document.createElement('canvas');
+                cvs.width = w; cvs.height = h;
+                const c = cvs.getContext('2d');
+                c.drawImage(srcImg, 0, 0);
+
+                const imgData = c.getImageData(0, 0, w, h);
+                const pix = imgData.data;
+
+                const gray = new Uint8Array(w * h);
+                for (let i = 0; i < w * h; i++) {
+                    gray[i] = Math.round(0.299 * pix[i*4] + 0.587 * pix[i*4+1] + 0.114 * pix[i*4+2]);
+                }
+
+                const hist = new Int32Array(256);
+                for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
+                const total = gray.length;
+                let sum = 0;
+                for (let t = 0; t < 256; t++) sum += t * hist[t];
+                let sumB = 0, wB = 0, maxVar = 0, threshold = 128;
+                for (let t = 0; t < 256; t++) {
+                    wB += hist[t];
+                    if (wB === 0) continue;
+                    const wF = total - wB;
+                    if (wF === 0) break;
+                    sumB += t * hist[t];
+                    const mB = sumB / wB;
+                    const mF = (sum - sumB) / wF;
+                    const varBetween = wB * wF * (mB - mF) * (mB - mF);
+                    if (varBetween > maxVar) { maxVar = varBetween; threshold = t; }
+                }
+
+                for (let i = 0; i < w * h; i++) {
+                    const v = gray[i] < threshold ? 0 : 255;
+                    pix[i*4] = pix[i*4+1] = pix[i*4+2] = v;
+                    pix[i*4+3] = 255;
+                }
+                c.putImageData(imgData, 0, 0);
+
+                let blackPixels = 0;
+                for (let i = 0; i < pix.length; i += 4) if (pix[i] === 0) blackPixels++;
+                if (blackPixels > (total / 2)) {
+                    for (let i = 0; i < pix.length; i += 4) {
+                        pix[i] = 255 - pix[i];
+                        pix[i+1] = 255 - pix[i+1];
+                        pix[i+2] = 255 - pix[i+2];
+                    }
+                    c.putImageData(imgData, 0, 0);
+                }
+                resolve(cvs.toDataURL('image/png'));
+            };
+            srcImg.onerror = () => reject(new Error('Failed to load source image'));
+            srcImg.src = sourceDataUrl;
+        });
+
+        // 2. Tesseract с fallback по языкам
+        const tessLangMap = {
+            'en': 'eng', 'en-US': 'eng', 'en-GB': 'eng',
+            'ru': 'rus', 'uk': 'ukr', 'be': 'bel',
+            'es': 'spa', 'fr': 'fra', 'de': 'deu', 'it': 'ita', 'pt': 'por',
+            'zh-CN': 'chi_sim', 'zh-TW': 'chi_tra', 'ja': 'jpn', 'ko': 'kor',
+            'ar': 'ara', 'fa': 'fas', 'tr': 'tur', 'pl': 'pol', 'nl': 'nld',
+            'cs': 'ces', 'sv': 'swe', 'da': 'dan', 'fi': 'fin', 'no': 'nor',
+            'el': 'ell', 'he': 'heb', 'hi': 'hin', 'th': 'tha', 'vi': 'vie'
+        };
+
+        let primaryLang;
+        if (sourceLang === 'auto' || sourceLang === 'ru') primaryLang = 'rus';
+        else if (sourceLang.startsWith('en')) primaryLang = 'eng';
+        else primaryLang = tessLangMap[sourceLang] || 'eng';
+
+        const langsToTry = [primaryLang, 'eng', 'rus'].filter((v, i, a) => a.indexOf(v) === i);
+
+        let result = null;
+        let lastErr = null;
+        for (const lang of langsToTry) {
+            try {
+                if (onProgress) onProgress(`Scanning (${lang})...`);
+                result = await Tesseract.recognize(bwDataUrl, lang, {
+                    logger: m => {
+                        if (m.status === 'recognizing text' && onProgress) {
+                            onProgress(`Scanning (${lang})... ${Math.round(m.progress * 100)}%`, Math.round(m.progress * 100));
+                        }
+                    }
+                });
+                console.log(`OCR success with lang: ${lang}`);
+                break;
+            } catch (err) {
+                console.warn(`OCR failed with lang "${lang}":`, err);
+                lastErr = err;
+            }
+        }
+        if (!result) {
+            throw new Error('OCR failed for all languages. Last error: ' + (lastErr ? lastErr.message : 'unknown'));
+        }
+
+        const words = result.data && result.data.words;
+        if (!words || words.length === 0) {
+            throw new Error('No text detected in image.');
+        }
+
+        // 3. Построение BW canvas для анализа пикселей
+        const bwImg = new Image();
+        bwImg.src = bwDataUrl;
+        await new Promise((res, rej) => { bwImg.onload = res; bwImg.onerror = rej; });
+        const bwCanvas = document.createElement('canvas');
+        bwCanvas.width = bwImg.naturalWidth;
+        bwCanvas.height = bwImg.naturalHeight;
+        const bwCtx = bwCanvas.getContext('2d');
+        bwCtx.drawImage(bwImg, 0, 0);
+        const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
+
+        const img = new Image();
+        img.src = sourceDataUrl;
+        await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+        const naturalWidth = img.naturalWidth;
+        const naturalHeight = img.naturalHeight;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = naturalWidth;
+        canvas.height = naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
+
+        // 4. Фильтрация слов
+        const validWords = [];
+        words.forEach(word => {
+            const text = word.text.trim();
+            if (text.length === 0) return;
+            if (/^[\W_]+$/u.test(text)) return;
+            const letterCount = (text.match(/\p{L}/gu) || []).length;
+            const digitCount = (text.match(/\d/g) || []).length;
+            if (letterCount < 1 && digitCount < 1) return;
+            const conf = word.confidence || 0;
+            if (conf < 25) return;
+            const { x0, y0, x1, y1 } = word.bbox;
+            const bw = Math.max(x1 - x0, 1);
+            const bh = Math.max(y1 - y0, 1);
+            if (bh < 5 || bw < 5) return;
+
+            const bwPixels = bwCtx.getImageData(
+                Math.max(x0, 0), Math.max(y0, 0),
+                Math.min(bw, bwCanvas.width - x0),
+                Math.min(bh, bwCanvas.height - y0)
+            ).data;
+            let blackCount = 0;
+            for (let i = 0; i < bwPixels.length; i += 4) if (bwPixels[i] < 128) blackCount++;
+            const blackRatio = blackCount / (bw * bh);
+            if (blackRatio > 0.95) return;
+
+            validWords.push({ text, bbox: word.bbox });
+        });
+
+        if (validWords.length === 0) {
+            throw new Error('Readable text not found.');
+        }
+
+        // 5. Перевод через Google
+        const textToTranslate = validWords.map(v => v.text).join('\n');
+        const transUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(textToTranslate)}`;
+        const transResp = await fetch(transUrl);
+        const transData = await transResp.json();
+        let fullTranslatedText = textToTranslate;
+        if (transData && transData[0]) {
+            fullTranslatedText = transData[0].map(c => c[0] || '').join('');
+            const translatedArr = fullTranslatedText.split('\n').map(l => l.trim());
+            validWords.forEach((item, i) => {
+                item.translatedText = translatedArr[i] || item.text;
+            });
+        } else {
+            validWords.forEach(item => { item.translatedText = item.text; });
+        }
+
+        // 6. Вспомогательные функции
+        const getAverageTextColor = (imgData, maskData, xStart, yStart, xEnd, yEnd, natW, natH) => {
+            let sumR = 0, sumG = 0, sumB = 0, count = 0;
+            for (let py = Math.max(0, Math.floor(yStart)); py < Math.min(natH, Math.ceil(yEnd)); py++) {
+                for (let px = Math.max(0, Math.floor(xStart)); px < Math.min(natW, Math.ceil(xEnd)); px++) {
+                    const idx = (py * natW + px) * 4;
+                    if (maskData.data[idx] < 128) {
+                        sumR += imgData.data[idx];
+                        sumG += imgData.data[idx+1];
+                        sumB += imgData.data[idx+2];
+                        count++;
+                    }
+                }
+            }
+            if (count === 0) return null;
+            return `rgb(${Math.round(sumR/count)}, ${Math.round(sumG/count)}, ${Math.round(sumB/count)})`;
+        };
+
+        const matchFontWeight = (fillRatio) => {
+            if (fillRatio > 0.38) return 900;
+            if (fillRatio > 0.34) return 800;
+            if (fillRatio > 0.30) return 700;
+            if (fillRatio > 0.26) return 600;
+            if (fillRatio > 0.22) return 500;
+            return 400;
+        };
+
+        const clearTextBackground = (x0, y0, x1, y1) => {
+            const erasePad = 2;
+            const ex0 = Math.max(0, Math.floor(x0) - erasePad);
+            const ey0 = Math.max(0, Math.floor(y0) - erasePad);
+            const ex1 = Math.min(naturalWidth, Math.ceil(x1) + erasePad);
+            const ey1 = Math.min(naturalHeight, Math.ceil(y1) + erasePad);
+            const regionWidth = ex1 - ex0;
+            const regionHeight = ey1 - ey0;
+            if (regionWidth <= 0 || regionHeight <= 0) return [0,0,0];
+
+            const regionImageData = ctx.getImageData(ex0, ey0, regionWidth, regionHeight);
+            const regionData = regionImageData.data;
+
+            function sampleCornerColor(cx, cy, radius = 3) {
+                let r = 0, g = 0, b = 0, count = 0;
+                for (let dy = -radius; dy <= radius; dy++) {
+                    for (let dx = -radius; dx <= radius; dx++) {
+                        const sx = cx + dx, sy = cy + dy;
+                        if (sx < ex0 || sx >= ex1 || sy < ey0 || sy >= ey1) continue;
+                        const idx = (sy * naturalWidth + sx) * 4;
+                        if (bwImageData.data[idx] < 128) continue;
+                        r += originalImageData.data[idx];
+                        g += originalImageData.data[idx+1];
+                        b += originalImageData.data[idx+2];
+                        count++;
+                    }
+                }
+                return count > 0 ? [Math.round(r/count), Math.round(g/count), Math.round(b/count)] : null;
+            }
+
+            const tl = sampleCornerColor(ex0, ey0) || [0,0,0];
+            const tr = sampleCornerColor(ex1-1, ey0) || [0,0,0];
+            const bl = sampleCornerColor(ex0, ey1-1) || [0,0,0];
+            const br = sampleCornerColor(ex1-1, ey1-1) || [0,0,0];
+
+            const w1 = regionWidth > 1 ? regionWidth - 1 : 1;
+            const h1 = regionHeight > 1 ? regionHeight - 1 : 1;
+
+            for (let y = 0; y < regionHeight; y++) {
+                const py = ey0 + y;
+                const fy = y / h1;
+                for (let x = 0; x < regionWidth; x++) {
+                    const px = ex0 + x;
+                    const fx = x / w1;
+                    const r = Math.round((1-fx)*(1-fy)*tl[0] + fx*(1-fy)*tr[0] + (1-fx)*fy*bl[0] + fx*fy*br[0]);
+                    const g = Math.round((1-fx)*(1-fy)*tl[1] + fx*(1-fy)*tr[1] + (1-fx)*fy*bl[1] + fx*fy*br[1]);
+                    const b = Math.round((1-fx)*(1-fy)*tl[2] + fx*(1-fy)*tr[2] + (1-fx)*fy*bl[2] + fx*fy*br[2]);
+
+                    let shouldErase = false;
+                    const minX = Math.max(ex0, px - erasePad);
+                    const maxX = Math.min(ex1 - 1, px + erasePad);
+                    const minY = Math.max(ey0, py - erasePad);
+                    const maxY = Math.min(ey1 - 1, py + erasePad);
+                    for (let cy = minY; cy <= maxY && !shouldErase; cy++) {
+                        for (let cx = minX; cx <= maxX && !shouldErase; cx++) {
+                            const maskIdx = (cy * naturalWidth + cx) * 4;
+                            if (bwImageData.data[maskIdx] < 128) shouldErase = true;
+                        }
+                    }
+                    if (shouldErase) {
+                        const idx = (y * regionWidth + x) * 4;
+                        regionData[idx] = r;
+                        regionData[idx+1] = g;
+                        regionData[idx+2] = b;
+                        regionData[idx+3] = 255;
+                    }
+                }
+            }
+            ctx.putImageData(regionImageData, ex0, ey0);
+            return tl;
+        };
+
+        // 7. Отрисовка
+        validWords.forEach((item) => {
+            const { x0, y0, x1, y1 } = item.bbox;
+            const boxWidth = x1 - x0;
+            const boxHeight = y1 - y0;
+            const cornerColor = clearTextBackground(x0, y0, x1, y1);
+
+            const startY = Math.max(0, Math.floor(y0));
+            const endY = Math.min(naturalHeight, Math.ceil(y1));
+            let topTextRow = null, bottomTextRow = null;
+            for (let py = startY; py < endY; py++) {
+                let rowHasText = false;
+                for (let px = Math.max(0, Math.floor(x0)); px < Math.min(naturalWidth, Math.ceil(x1)); px++) {
+                    if (bwImageData.data[(py * naturalWidth + px) * 4] < 128) { rowHasText = true; break; }
+                }
+                if (rowHasText) {
+                    if (topTextRow === null) topTextRow = py;
+                    bottomTextRow = py;
+                }
+            }
+            const realTextHeight = (topTextRow !== null && bottomTextRow !== null) ? (bottomTextRow - topTextRow + 1) : boxHeight;
+
+            let textPixels = 0, totalPixels = 0;
+            for (let py = startY; py < endY; py++) {
+                for (let px = Math.floor(x0); px < Math.ceil(x1); px++) {
+                    if (px < 0 || px >= naturalWidth || py < 0 || py >= naturalHeight) continue;
+                    if (bwImageData.data[(py * naturalWidth + px) * 4] < 128) textPixels++;
+                    totalPixels++;
+                }
+            }
+            const textFillRatio = totalPixels > 0 ? textPixels / totalPixels : 0;
+            const fontWeight = matchFontWeight(textFillRatio);
+
+            let fontSize = Math.max(Math.floor(realTextHeight), 8);
+            ctx.font = `${fontWeight} ${fontSize}px Arial`;
+            let textWidth = ctx.measureText(item.translatedText).width;
+            while (textWidth > boxWidth - 2 && fontSize > 6) {
+                fontSize--;
+                ctx.font = `${fontWeight} ${fontSize}px Arial`;
+                textWidth = ctx.measureText(item.translatedText).width;
+            }
+
+            const leftPartWidth = Math.min(boxWidth * 0.25, 10);
+            const rightPartWidth = leftPartWidth;
+            const leftColor = getAverageTextColor(originalImageData, bwImageData, x0, y0, x0 + leftPartWidth, y1, naturalWidth, naturalHeight);
+            const rightColor = getAverageTextColor(originalImageData, bwImageData, x1 - rightPartWidth, y0, x1, y1, naturalWidth, naturalHeight);
+            const colorLeft = leftColor || rightColor || '#000000';
+            const colorRight = rightColor || leftColor || '#000000';
+
+            const gradient = ctx.createLinearGradient(x0, y0, x1, y0);
+            gradient.addColorStop(0, colorLeft);
+            gradient.addColorStop(1, colorRight);
+            ctx.fillStyle = gradient;
+
+            const [bgR, bgG, bgB] = cornerColor || [128,128,128];
+            const bgLum = (0.299 * bgR + 0.587 * bgG + 0.114 * bgB) / 255;
+            let shadowColor;
+            if (bgLum > 0.6) shadowColor = 'rgba(0, 0, 0, 0.25)';
+            else if (bgLum > 0.3) shadowColor = 'rgba(0, 0, 0, 0.18)';
+            else shadowColor = 'rgba(255, 255, 255, 0.25)';
+
+            ctx.shadowColor = shadowColor;
+            ctx.shadowBlur = Math.max(1, Math.round(fontSize * 0.12));
+            ctx.shadowOffsetX = 1;
+            ctx.shadowOffsetY = 1;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(item.translatedText, x0 + 1, y0 + boxHeight / 2, boxWidth - 2);
+
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+        });
+
+        return {
+            originalSrc: sourceDataUrl,
+            translatedSrc: canvas.toDataURL('image/png'),
+            translatedText: fullTranslatedText
+        };
+    }
+
+    // ============ IMAGE TRANSLATION ============
+    const translateImage = async () => {
+        if (!currentImageFile) return;
+
+        imageProgress.classList.remove('hidden');
+        overlayLayer.innerHTML = '';
+        imageProgressFill.style.width = '0%';
+        imageProgressText.textContent = 'Scanning image...';
+
+        try {
+            const result = await processImageForTranslation(
+                imagePreview.src,
+                getSourceLang(),
+                getTargetLang(),
+                (msg, pct) => {
+                    imageProgressText.textContent = msg;
+                    if (typeof pct === 'number') imageProgressFill.style.width = `${pct}%`;
+                }
+            );
+
+            translatedImageText.textContent = result.translatedText;
+            imagePreview.dataset.originalSrc = result.originalSrc;
+            imagePreview.dataset.translatedSrc = result.translatedSrc;
+
+            const downloadImageBtn = document.getElementById('downloadImageBtn');
+            if (downloadImageBtn) {
+                downloadImageBtn.style.display = 'inline-flex';
+                downloadImageBtn.onclick = () => {
+                    const link = document.createElement('a');
+                    link.download = `translated_image_${getTargetLang()}.png`;
+                    link.href = imagePreview.dataset.translatedSrc;
+                    link.click();
+                };
+            }
+
+            imageProgress.classList.add('hidden');
+            imageResultContainer.classList.remove('hidden');
+            imagePreview.src = imagePreview.dataset.translatedSrc;
+            if (overlayLayer) overlayLayer.classList.add('hidden');
+            viewTranslatedBtn.classList.add('active');
+            viewOriginalBtn.classList.remove('active');
+        } catch (error) {
+            console.error('Image Error:', error);
+            alert('Error processing image translation: ' + error.message);
+            imageProgress.classList.add('hidden');
+        }
+    };
+
+    // ============ DOCUMENT TRANSLATION ============
     const translateDocument = async () => {
         if (!currentFile) {
             alert('Please select a file to translate.');
@@ -621,6 +930,95 @@ document.addEventListener('DOMContentLoaded', () => {
         progressFill.style.width = '0%';
         progressText.textContent = 'Reading file...';
 
+        // === PDF: рендерим каждую страницу как изображение, переводим через OCR + overlay ===
+        if (currentFile.name.toLowerCase().endsWith('.pdf')) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const typedarray = new Uint8Array(e.target.result);
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    const totalPages = pdf.numPages;
+                    const translatedPages = []; // data URLs
+
+                    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const viewport = page.getViewport({ scale: 2 });
+                        const cvs = document.createElement('canvas');
+                        cvs.width = viewport.width;
+                        cvs.height = viewport.height;
+                        const pageCtx = cvs.getContext('2d');
+                        await page.render({ canvasContext: pageCtx, viewport }).promise;
+                        const pageDataUrl = cvs.toDataURL('image/png');
+
+                        progressText.textContent = `Page ${pageNum}/${totalPages}: OCR + translation...`;
+
+                        try {
+                            const result = await processImageForTranslation(
+                                pageDataUrl,
+                                sourceLang,
+                                targetLang,
+                                (msg, pct) => {
+                                    const base = Math.round(((pageNum - 1) / totalPages) * 100);
+                                    const sub = Math.round(((pct || 0) / 100) * (100 / totalPages));
+                                    progressFill.style.width = `${base + sub}%`;
+                                    progressText.textContent = `Page ${pageNum}/${totalPages}: ${msg}`;
+                                }
+                            );
+                            translatedPages.push(result.translatedSrc);
+                        } catch (err) {
+                            console.warn(`Page ${pageNum} OCR failed, using original:`, err);
+                            translatedPages.push(pageDataUrl); // fallback: original page
+                        }
+
+                        progressFill.style.width = `${Math.round((pageNum / totalPages) * 100)}%`;
+                    }
+
+                    // Сборка HTML со всеми переведёнными страницами
+                    const pagesHtml = translatedPages.map((src, i) =>
+                        `<div class="page"><img src="${src}" alt="Page ${i+1}"/></div>`
+                    ).join('\n');
+
+                    const htmlContent = `<!DOCTYPE html>
+<html lang="${targetLang}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Translated Document</title>
+<style>
+  body { background: #e5e5e5; margin: 0; padding: 20px 0; }
+  .page { max-width: 900px; margin: 0 auto 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); background: #fff; }
+  .page img { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+${pagesHtml}
+</body>
+</html>`;
+
+                    if (currentObjectURL) URL.revokeObjectURL(currentObjectURL);
+                    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                    currentObjectURL = URL.createObjectURL(blob);
+
+                    const lastDot = currentFile.name.lastIndexOf('.');
+                    const name = currentFile.name.substring(0, lastDot) || currentFile.name;
+                    downloadBtn.href = currentObjectURL;
+                    downloadBtn.download = `${name}_${targetLang}.html`;
+
+                    progressFill.style.width = '100%';
+                    translationProgress.classList.add('hidden');
+                    downloadArea.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Error processing PDF:', error);
+                    alert('Failed to process PDF: ' + error.message);
+                    translationProgress.classList.add('hidden');
+                }
+            };
+            reader.onerror = () => { alert('Failed to read file'); translationProgress.classList.add('hidden'); };
+            reader.readAsArrayBuffer(currentFile);
+            return;
+        }
+
+        // === Остальные файлы (txt, md, json, html и т.д.) — текст извлекается и переводится ===
         const processTextAndTranslate = async (text) => {
             if (!text.trim()) {
                 alert('File is empty or could not extract text.');
@@ -646,9 +1044,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     if (!splitFound) {
                         const lastSpace = slice.lastIndexOf(' ');
-                        if (lastSpace !== -1 && lastSpace > slice.length * 0.5) {
-                            end = i + lastSpace + 1;
-                        }
+                        if (lastSpace !== -1 && lastSpace > slice.length * 0.5) end = i + lastSpace + 1;
                     }
                 }
                 chunks.push(text.slice(i, end));
@@ -656,7 +1052,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             progressText.textContent = `Translating ${chunks.length} chunks...`;
-
             const translatedChunks = new Array(chunks.length);
             let completedChunks = 0;
 
@@ -665,15 +1060,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(chunk)}`;
                     const response = await fetch(url);
                     const data = await response.json();
-                    if (data && data[0]) {
-                        translatedChunks[index] = data[0].map(c => c[0] || '').join('');
-                    } else {
-                        translatedChunks[index] = chunk;
-                    }
-                } catch (err) {
-                    console.error('Error translating chunk', index, err);
-                    translatedChunks[index] = chunk;
-                } finally {
+                    if (data && data[0]) translatedChunks[index] = data[0].map(c => c[0] || '').join('');
+                    else translatedChunks[index] = chunk;
+                } catch (err) { translatedChunks[index] = chunk; }
+                finally {
                     completedChunks++;
                     const percent = Math.round((completedChunks / chunks.length) * 100);
                     progressFill.style.width = `${percent}%`;
@@ -688,570 +1078,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const translatedContent = translatedChunks.join('');
-
-            if (currentObjectURL) {
-                URL.revokeObjectURL(currentObjectURL);
-            }
+            if (currentObjectURL) URL.revokeObjectURL(currentObjectURL);
 
             const lastDot = currentFile.name.lastIndexOf('.');
             const name = currentFile.name.substring(0, lastDot) || currentFile.name;
-            const ext = currentFile.name.toLowerCase().endsWith('.pdf') ? '.pdf' : (lastDot !== -1 ? currentFile.name.substring(lastDot) : '.txt');
+            const ext = lastDot !== -1 ? currentFile.name.substring(lastDot) : '.txt';
 
-            if (ext === '.pdf') {
-                // ВАЖНО: сохраняем как HTML — кириллица отображается идеально, jsPDF её не поддерживает
-                const escaped = translatedContent
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
-                const htmlContent = `<!DOCTYPE html>
-<html lang="${targetLang}">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Translated Document</title>
-<style>
-  body { font-family: 'Times New Roman', 'Noto Sans', Arial, sans-serif; line-height: 1.7; padding: 40px; max-width: 900px; margin: 0 auto; color: #222; background: #fff; }
-  p { margin: 0 0 14px; white-space: pre-wrap; }
-</style>
-</head>
-<body>
-${escaped.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
-</body>
-</html>`;
-                const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
-                currentObjectURL = URL.createObjectURL(blob);
-                downloadBtn.href = currentObjectURL;
-                downloadBtn.download = `${name}_${targetLang}.html`;
-            } else {
-                const blob = new Blob([translatedContent], { type: 'text/plain;charset=utf-8' });
-                currentObjectURL = URL.createObjectURL(blob);
-                downloadBtn.href = currentObjectURL;
-                downloadBtn.download = `${name}_${targetLang}${ext}`;
-            }
+            const blob = new Blob([translatedContent], { type: 'text/plain;charset=utf-8' });
+            currentObjectURL = URL.createObjectURL(blob);
+            downloadBtn.href = currentObjectURL;
+            downloadBtn.download = `${name}_${targetLang}${ext}`;
 
             translationProgress.classList.add('hidden');
             downloadArea.classList.remove('hidden');
         };
 
-        if (currentFile.name.toLowerCase().endsWith('.pdf')) {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                try {
-                    const typedarray = new Uint8Array(e.target.result);
-                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
-                    let fullText = '';
-                    progressText.textContent = `Extracting text from PDF... (0/${pdf.numPages})`;
-
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        const pageText = textContent.items.map(item => item.str).join(' ');
-                        fullText += pageText + '\n\n';
-                        progressFill.style.width = `${Math.round((i / pdf.numPages) * 100)}%`;
-                        progressText.textContent = `Extracting text... (${i}/${pdf.numPages})`;
-                    }
-                    progressFill.style.width = '0%';
-                    progressText.textContent = 'Translating... 0%';
-                    await processTextAndTranslate(fullText);
-                } catch (error) {
-                    console.error('Error parsing PDF:', error);
-                    alert('Failed to parse PDF file. It might be corrupted or protected.');
-                    translationProgress.classList.add('hidden');
-                }
-            };
-            reader.onerror = () => { alert('Failed to read file'); translationProgress.classList.add('hidden'); };
-            reader.readAsArrayBuffer(currentFile);
-        } else {
-            const reader = new FileReader();
-            reader.onload = async (e) => await processTextAndTranslate(e.target.result);
-            reader.onerror = () => { alert('Failed to read file'); translationProgress.classList.add('hidden'); };
-            reader.readAsText(currentFile);
-        }
+        const reader = new FileReader();
+        reader.onload = async (e) => await processTextAndTranslate(e.target.result);
+        reader.onerror = () => { alert('Failed to read file'); translationProgress.classList.add('hidden'); };
+        reader.readAsText(currentFile);
     };
 
-    // Перевод изображений
-    const translateImage = async () => {
-        if (!currentImageFile) return;
-
-        const sourceLang = getSourceLang();
-        const targetLang = getTargetLang();
-
-        imageProgress.classList.remove('hidden');
-        overlayLayer.innerHTML = '';
-        imageProgressFill.style.width = '0%';
-        imageProgressText.textContent = 'Scanning image...';
-
-        const getAverageTextColor = (imgData, maskData, xStart, yStart, xEnd, yEnd, natW, natH) => {
-            let sumR = 0, sumG = 0, sumB = 0, count = 0;
-            for (let py = Math.max(0, Math.floor(yStart)); py < Math.min(natH, Math.ceil(yEnd)); py++) {
-                for (let px = Math.max(0, Math.floor(xStart)); px < Math.min(natW, Math.ceil(xEnd)); px++) {
-                    const idx = (py * natW + px) * 4;
-                    if (maskData.data[idx] < 128) {
-                        sumR += imgData.data[idx];
-                        sumG += imgData.data[idx + 1];
-                        sumB += imgData.data[idx + 2];
-                        count++;
-                    }
-                }
-            }
-            if (count === 0) return null;
-            return `rgb(${Math.round(sumR / count)}, ${Math.round(sumG / count)}, ${Math.round(sumB / count)})`;
-        };
-
-        const matchFontWeight = (fillRatio) => {
-            if (fillRatio > 0.38) return 900;
-            if (fillRatio > 0.34) return 800;
-            if (fillRatio > 0.30) return 700;
-            if (fillRatio > 0.26) return 600;
-            if (fillRatio > 0.22) return 500;
-            return 400;
-        };
-
-        const clearTextBackground = (x0, y0, x1, y1) => {
-            const erasePad = 2;
-            const ex0 = Math.max(0, Math.floor(x0) - erasePad);
-            const ey0 = Math.max(0, Math.floor(y0) - erasePad);
-            const ex1 = Math.min(naturalWidth, Math.ceil(x1) + erasePad);
-            const ey1 = Math.min(naturalHeight, Math.ceil(y1) + erasePad);
-
-            const regionWidth = ex1 - ex0;
-            const regionHeight = ey1 - ey0;
-
-            if (regionWidth <= 0 || regionHeight <= 0) return [0, 0, 0];
-
-            const regionImageData = ctx.getImageData(ex0, ey0, regionWidth, regionHeight);
-            const regionData = regionImageData.data;
-
-            function sampleCornerColor(cx, cy, radius = 3) {
-                let r = 0, g = 0, b = 0, count = 0;
-                for (let dy = -radius; dy <= radius; dy++) {
-                    for (let dx = -radius; dx <= radius; dx++) {
-                        const sx = cx + dx;
-                        const sy = cy + dy;
-                        if (sx < ex0 || sx >= ex1 || sy < ey0 || sy >= ey1) continue;
-                        const idx = (sy * naturalWidth + sx) * 4;
-                        if (bwImageData.data[idx] < 128) continue;
-                        r += originalImageData.data[idx];
-                        g += originalImageData.data[idx + 1];
-                        b += originalImageData.data[idx + 2];
-                        count++;
-                    }
-                }
-                return count > 0 ? [Math.round(r / count), Math.round(g / count), Math.round(b / count)] : null;
-            }
-
-            const tl = sampleCornerColor(ex0, ey0) || [0, 0, 0];
-            const tr = sampleCornerColor(ex1 - 1, ey0) || [0, 0, 0];
-            const bl = sampleCornerColor(ex0, ey1 - 1) || [0, 0, 0];
-            const br = sampleCornerColor(ex1 - 1, ey1 - 1) || [0, 0, 0];
-
-            if (regionWidth <= 1 || regionHeight <= 1) {
-                const avgColor = [
-                    Math.round((tl[0] + tr[0] + bl[0] + br[0]) / 4),
-                    Math.round((tl[1] + tr[1] + bl[1] + br[1]) / 4),
-                    Math.round((tl[2] + tr[2] + bl[2] + br[2]) / 4)
-                ];
-                for (let y = 0; y < regionHeight; y++) {
-                    const py = ey0 + y;
-                    for (let x = 0; x < regionWidth; x++) {
-                        const px = ex0 + x;
-                        let shouldErase = false;
-                        const minCheckX = Math.max(ex0, px - erasePad);
-                        const maxCheckX = Math.min(ex1 - 1, px + erasePad);
-                        const minCheckY = Math.max(ey0, py - erasePad);
-                        const maxCheckY = Math.min(ey1 - 1, py + erasePad);
-                        for (let cy = minCheckY; cy <= maxCheckY && !shouldErase; cy++) {
-                            for (let cx = minCheckX; cx <= maxCheckX && !shouldErase; cx++) {
-                                const maskIdx = (cy * naturalWidth + cx) * 4;
-                                if (bwImageData.data[maskIdx] < 128) shouldErase = true;
-                            }
-                        }
-                        if (shouldErase) {
-                            const idx = (y * regionWidth + x) * 4;
-                            regionData[idx] = avgColor[0];
-                            regionData[idx + 1] = avgColor[1];
-                            regionData[idx + 2] = avgColor[2];
-                            regionData[idx + 3] = 255;
-                        }
-                    }
-                }
-                ctx.putImageData(regionImageData, ex0, ey0);
-                return avgColor;
-            }
-
-            for (let y = 0; y < regionHeight; y++) {
-                const py = ey0 + y;
-                const fy = y / (regionHeight - 1);
-                for (let x = 0; x < regionWidth; x++) {
-                    const px = ex0 + x;
-                    const fx = x / (regionWidth - 1);
-
-                    const r = Math.round(
-                        (1 - fx) * (1 - fy) * tl[0] +
-                        fx * (1 - fy) * tr[0] +
-                        (1 - fx) * fy * bl[0] +
-                        fx * fy * br[0]
-                    );
-                    const g = Math.round(
-                        (1 - fx) * (1 - fy) * tl[1] +
-                        fx * (1 - fy) * tr[1] +
-                        (1 - fx) * fy * bl[1] +
-                        fx * fy * br[1]
-                    );
-                    const b = Math.round(
-                        (1 - fx) * (1 - fy) * tl[2] +
-                        fx * (1 - fy) * tr[2] +
-                        (1 - fx) * fy * bl[2] +
-                        fx * fy * br[2]
-                    );
-
-                    let shouldErase = false;
-                    const minCheckX = Math.max(ex0, px - erasePad);
-                    const maxCheckX = Math.min(ex1 - 1, px + erasePad);
-                    const minCheckY = Math.max(ey0, py - erasePad);
-                    const maxCheckY = Math.min(ey1 - 1, py + erasePad);
-                    for (let cy = minCheckY; cy <= maxCheckY && !shouldErase; cy++) {
-                        for (let cx = minCheckX; cx <= maxCheckX && !shouldErase; cx++) {
-                            const maskIdx = (cy * naturalWidth + cx) * 4;
-                            if (bwImageData.data[maskIdx] < 128) shouldErase = true;
-                        }
-                    }
-
-                    if (shouldErase) {
-                        const idx = (y * regionWidth + x) * 4;
-                        regionData[idx] = r;
-                        regionData[idx + 1] = g;
-                        regionData[idx + 2] = b;
-                        regionData[idx + 3] = 255;
-                    }
-                }
-            }
-
-            ctx.putImageData(regionImageData, ex0, ey0);
-            return tl;
-        };
-
-        try {
-            // Расширенная карта языков для OCR + eng+rus при auto
-            const tessLangMap = {
-                'en': 'eng', 'en-US': 'eng', 'en-GB': 'eng',
-                'ru': 'rus', 'uk': 'ukr', 'be': 'bel',
-                'es': 'spa', 'fr': 'fra', 'de': 'deu', 'it': 'ita', 'pt': 'por',
-                'zh-CN': 'chi_sim', 'zh-TW': 'chi_tra', 'ja': 'jpn', 'ko': 'kor',
-                'ar': 'ara', 'fa': 'fas', 'tr': 'tur', 'pl': 'pol', 'nl': 'nld',
-                'cs': 'ces', 'sv': 'swe', 'da': 'dan', 'fi': 'fin', 'no': 'nor',
-                'el': 'ell', 'he': 'heb', 'hi': 'hin', 'th': 'tha', 'vi': 'vie'
-            };
-            let tessLang = tessLangMap[sourceLang];
-            if (!tessLang || sourceLang === 'auto') {
-                tessLang = 'eng+rus';
-            }
-
-            const originalDataUrl = imagePreview.src;
-
-            imageProgressText.textContent = 'Preprocessing image...';
-            const bwDataUrl = await new Promise((resolve) => {
-                const srcImg = new Image();
-                srcImg.onload = () => {
-                    const w = srcImg.naturalWidth;
-                    const h = srcImg.naturalHeight;
-                    const cvs = document.createElement('canvas');
-                    cvs.width = w;
-                    cvs.height = h;
-                    const c = cvs.getContext('2d');
-                    c.drawImage(srcImg, 0, 0);
-
-                    const imgData = c.getImageData(0, 0, w, h);
-                    const pix = imgData.data;
-
-                    const gray = new Uint8Array(w * h);
-                    for (let i = 0; i < w * h; i++) {
-                        gray[i] = Math.round(0.299 * pix[i * 4] + 0.587 * pix[i * 4 + 1] + 0.114 * pix[i * 4 + 2]);
-                    }
-
-                    const hist = new Int32Array(256);
-                    for (let i = 0; i < gray.length; i++) hist[gray[i]]++;
-                    const total = gray.length;
-                    let sum = 0;
-                    for (let t = 0; t < 256; t++) sum += t * hist[t];
-                    let sumB = 0, wB = 0, maxVar = 0, threshold = 128;
-                    for (let t = 0; t < 256; t++) {
-                        wB += hist[t];
-                        if (wB === 0) continue;
-                        const wF = total - wB;
-                        if (wF === 0) break;
-                        sumB += t * hist[t];
-                        const mB = sumB / wB;
-                        const mF = (sum - sumB) / wF;
-                        const varBetween = wB * wF * (mB - mF) * (mB - mF);
-                        if (varBetween > maxVar) { maxVar = varBetween; threshold = t; }
-                    }
-
-                    for (let i = 0; i < w * h; i++) {
-                        const v = gray[i] < threshold ? 0 : 255;
-                        pix[i * 4] = pix[i * 4 + 1] = pix[i * 4 + 2] = v;
-                        pix[i * 4 + 3] = 255;
-                    }
-                    c.putImageData(imgData, 0, 0);
-
-                    let blackPixels = 0;
-                    for (let i = 0; i < pix.length; i += 4) {
-                        if (pix[i] === 0) blackPixels++;
-                    }
-                    if (blackPixels > (total / 2)) {
-                        for (let i = 0; i < pix.length; i += 4) {
-                            pix[i] = 255 - pix[i];
-                            pix[i + 1] = 255 - pix[i + 1];
-                            pix[i + 2] = 255 - pix[i + 2];
-                        }
-                        c.putImageData(imgData, 0, 0);
-                    }
-
-                    resolve(cvs.toDataURL('image/png'));
-                };
-                srcImg.src = originalDataUrl;
-            });
-
-            const result = await Tesseract.recognize(bwDataUrl, tessLang, {
-                logger: m => {
-                    if (m.status === 'recognizing text') {
-                        const percent = Math.round(m.progress * 100);
-                        imageProgressFill.style.width = `${percent}%`;
-                        imageProgressText.textContent = `Scanning... ${percent}%`;
-                    }
-                }
-            });
-
-            const { data: { words } } = result;
-            if (!words || words.length === 0) {
-                alert('No text detected in image.');
-                imageProgress.classList.add('hidden');
-                return;
-            }
-
-            imageProgressFill.style.width = '0%';
-            imageProgressText.textContent = 'Filtering text...';
-
-            const bwImg = new Image();
-            bwImg.src = bwDataUrl;
-            await new Promise(r => bwImg.onload = r);
-            const bwCanvas = document.createElement('canvas');
-            bwCanvas.width = bwImg.naturalWidth;
-            bwCanvas.height = bwImg.naturalHeight;
-            const bwCtx = bwCanvas.getContext('2d');
-            bwCtx.drawImage(bwImg, 0, 0);
-            const bwImageData = bwCtx.getImageData(0, 0, bwCanvas.width, bwCanvas.height);
-
-            const img = new Image();
-            img.src = originalDataUrl;
-            await new Promise(r => img.onload = r);
-
-            const naturalWidth = img.naturalWidth;
-            const naturalHeight = img.naturalHeight;
-
-            const canvas = document.createElement('canvas');
-            canvas.width = naturalWidth;
-            canvas.height = naturalHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
-
-            const validWords = [];
-            words.forEach(word => {
-                const text = word.text.trim();
-                if (text.length === 0) return;
-
-                const isOnlyNoise = /^[\W_]+$/u.test(text);
-                if (isOnlyNoise) return;
-
-                const letterCount = (text.match(/\p{L}/gu) || []).length;
-                const digitCount = (text.match(/\d/g) || []).length;
-
-                if (letterCount < 1 && digitCount < 1) return;
-
-                const conf = word.confidence || 0;
-                if (conf < 25) return;
-
-                const { x0, y0, x1, y1 } = word.bbox;
-                const bw = Math.max(x1 - x0, 1);
-                const bh = Math.max(y1 - y0, 1);
-                if (bh < 5 || bw < 5) return;
-
-                const bwPixels = bwCtx.getImageData(
-                    Math.max(x0, 0), Math.max(y0, 0),
-                    Math.min(bw, bwCanvas.width - x0),
-                    Math.min(bh, bwCanvas.height - y0)
-                ).data;
-                let blackCount = 0;
-                for (let i = 0; i < bwPixels.length; i += 4) {
-                    if (bwPixels[i] < 128) blackCount++;
-                }
-                const blackRatio = blackCount / (bw * bh);
-                if (blackRatio > 0.95) {
-                    console.log(`Фильтр: залитая фигура (${(blackRatio * 100).toFixed(0)}%) "${text}"`);
-                    return;
-                }
-                validWords.push({ text, bbox: word.bbox });
-            });
-
-            if (validWords.length === 0) {
-                alert('Readable text to translate not found (logos/watermarks skipped).');
-                imageProgress.classList.add('hidden');
-                return;
-            }
-
-            imageProgressText.textContent = 'Translating text...';
-            const textToTranslate = validWords.map(v => v.text).join('\n');
-
-            try {
-                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(textToTranslate)}`;
-                const response = await fetch(url);
-                const data = await response.json();
-                if (data && data[0]) {
-                    const fullTranslatedText = data[0].map(c => c[0] || '').join('');
-                    const translatedArr = fullTranslatedText.split('\n').map(l => l.trim());
-                    validWords.forEach((item, i) => {
-                        item.translatedText = translatedArr[i] || item.text;
-                    });
-                    translatedImageText.textContent = fullTranslatedText;
-                } else {
-                    validWords.forEach(item => { item.translatedText = item.text; });
-                    translatedImageText.textContent = textToTranslate;
-                }
-            } catch (err) {
-                console.error('Translation error', err);
-                alert('Translation failed. Please try again.');
-                imageProgress.classList.add('hidden');
-                return;
-            }
-
-            validWords.forEach((item) => {
-                const { x0, y0, x1, y1 } = item.bbox;
-                const boxWidth = x1 - x0;
-                const boxHeight = y1 - y0;
-
-                const cornerColor = clearTextBackground(x0, y0, x1, y1);
-
-                const startY = Math.max(0, Math.floor(y0));
-                const endY = Math.min(naturalHeight, Math.ceil(y1));
-                let topTextRow = null, bottomTextRow = null;
-                for (let py = startY; py < endY; py++) {
-                    let rowHasText = false;
-                    for (let px = Math.max(0, Math.floor(x0)); px < Math.min(naturalWidth, Math.ceil(x1)); px++) {
-                        const bwIndex = (py * naturalWidth + px) * 4;
-                        if (bwImageData.data[bwIndex] < 128) { rowHasText = true; break; }
-                    }
-                    if (rowHasText) {
-                        if (topTextRow === null) topTextRow = py;
-                        bottomTextRow = py;
-                    }
-                }
-                const realTextHeight = (topTextRow !== null && bottomTextRow !== null) ? (bottomTextRow - topTextRow + 1) : boxHeight;
-
-                let textPixels = 0, totalPixels = 0;
-                for (let py = startY; py < endY; py++) {
-                    for (let px = Math.floor(x0); px < Math.ceil(x1); px++) {
-                        if (px < 0 || px >= naturalWidth || py < 0 || py >= naturalHeight) continue;
-                        const idx = (py * naturalWidth + px) * 4;
-                        if (bwImageData.data[idx] < 128) textPixels++;
-                        totalPixels++;
-                    }
-                }
-                const textFillRatio = totalPixels > 0 ? textPixels / totalPixels : 0;
-                const fontWeight = matchFontWeight(textFillRatio);
-
-                let fontSize = Math.floor(realTextHeight);
-                fontSize = Math.max(fontSize, 8);
-                ctx.font = `${fontWeight} ${fontSize}px Arial`;
-                let textWidth = ctx.measureText(item.translatedText).width;
-                while (textWidth > boxWidth - 2 && fontSize > 6) {
-                    fontSize--;
-                    ctx.font = `${fontWeight} ${fontSize}px Arial`;
-                    textWidth = ctx.measureText(item.translatedText).width;
-                }
-
-                const leftPartWidth = Math.min(boxWidth * 0.25, 10);
-                const rightPartWidth = leftPartWidth;
-
-                const leftColor = getAverageTextColor(originalImageData, bwImageData, x0, y0, x0 + leftPartWidth, y1, naturalWidth, naturalHeight);
-                const rightColor = getAverageTextColor(originalImageData, bwImageData, x1 - rightPartWidth, y0, x1, y1, naturalWidth, naturalHeight);
-
-                const colorLeft = leftColor || rightColor || '#000000';
-                const colorRight = rightColor || leftColor || '#000000';
-
-                const gradient = ctx.createLinearGradient(x0, y0, x1, y0);
-                gradient.addColorStop(0, colorLeft);
-                gradient.addColorStop(1, colorRight);
-                ctx.fillStyle = gradient;
-
-                const [bgR, bgG, bgB] = cornerColor || [128, 128, 128];
-                const bgLuminance = (0.299 * bgR + 0.587 * bgG + 0.114 * bgB) / 255;
-                let shadowColor, shadowBlur;
-                if (bgLuminance > 0.6) {
-                    shadowColor = 'rgba(0, 0, 0, 0.25)';
-                } else if (bgLuminance > 0.3) {
-                    shadowColor = 'rgba(0, 0, 0, 0.18)';
-                } else {
-                    shadowColor = 'rgba(255, 255, 255, 0.25)';
-                }
-                shadowBlur = Math.max(1, Math.round(fontSize * 0.12));
-                ctx.shadowColor = shadowColor;
-                ctx.shadowBlur = shadowBlur;
-                ctx.shadowOffsetX = 1;
-                ctx.shadowOffsetY = 1;
-
-                ctx.textBaseline = 'middle';
-                ctx.fillText(item.translatedText, x0 + 1, y0 + boxHeight / 2, boxWidth - 2);
-
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
-                ctx.shadowOffsetX = 0;
-                ctx.shadowOffsetY = 0;
-            });
-
-            imagePreview.dataset.originalSrc = originalDataUrl;
-            imagePreview.dataset.translatedSrc = canvas.toDataURL('image/png');
-
-            const downloadImageBtn = document.getElementById('downloadImageBtn');
-            if (downloadImageBtn) {
-                downloadImageBtn.style.display = 'inline-flex';
-                downloadImageBtn.onclick = () => {
-                    const link = document.createElement('a');
-                    link.download = `translated_image_${targetLang}.png`;
-                    link.href = imagePreview.dataset.translatedSrc;
-                    link.click();
-                };
-            }
-
-            imageProgress.classList.add('hidden');
-            imageResultContainer.classList.remove('hidden');
-            imagePreview.src = imagePreview.dataset.translatedSrc;
-            if (overlayLayer) overlayLayer.classList.add('hidden');
-            viewTranslatedBtn.classList.add('active');
-            viewOriginalBtn.classList.remove('active');
-
-        } catch (error) {
-            console.error('Image Error:', error);
-            alert('Error processing image translation.');
-            imageProgress.classList.add('hidden');
-        }
-    };
-
-    // Эффекты Lucid Water — wobble только в этой теме
+    // ============ LUCID WATER EFFECTS (wobble) ============
     function initLucidWaterEffects() {
         const isLucidWater = document.body.getAttribute('data-theme') === 'lucid-water';
         if (!isLucidWater) return;
-
         document.querySelectorAll('.icon-btn, .secondary-btn, .swap-btn').forEach(btn => {
             btn.removeEventListener('mouseenter', handleMouseEnter);
             btn.addEventListener('mouseenter', handleMouseEnter);
-        });
-    }
-
-    function removeLucidWaterEffects() {
-        document.querySelectorAll('.icon-btn, .secondary-btn, .swap-btn').forEach(btn => {
-            btn.removeEventListener('mouseenter', handleMouseEnter);
-            btn.style.animation = '';
         });
     }
 
@@ -1265,18 +1119,14 @@ ${escaped.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
 
     initLucidWaterEffects();
 
+    // ============ VIEW TOGGLE ============
     viewOriginalBtn.addEventListener('click', () => {
-        if (imagePreview.dataset.originalSrc) {
-            imagePreview.src = imagePreview.dataset.originalSrc;
-        }
+        if (imagePreview.dataset.originalSrc) imagePreview.src = imagePreview.dataset.originalSrc;
         viewOriginalBtn.classList.add('active');
         viewTranslatedBtn.classList.remove('active');
     });
-
     viewTranslatedBtn.addEventListener('click', () => {
-        if (imagePreview.dataset.translatedSrc) {
-            imagePreview.src = imagePreview.dataset.translatedSrc;
-        }
+        if (imagePreview.dataset.translatedSrc) imagePreview.src = imagePreview.dataset.translatedSrc;
         viewTranslatedBtn.classList.add('active');
         viewOriginalBtn.classList.remove('active');
     });
@@ -1287,12 +1137,8 @@ ${escaped.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
         try {
             await navigator.clipboard.writeText(text);
             copyImageTextBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
-            setTimeout(() => {
-                copyImageTextBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
-            }, 2000);
-        } catch (err) {
-            console.error('Copy failed', err);
-        }
+            setTimeout(() => { copyImageTextBtn.innerHTML = '<i class="fa-regular fa-copy"></i>'; }, 2000);
+        } catch (err) { console.error('Copy failed', err); }
     });
 
     sourceText.addEventListener('keydown', (e) => {
