@@ -466,24 +466,59 @@ document.addEventListener('DOMContentLoaded', () => {
         return lines;
     }
 
-    // УПРОЩЁННЫЙ фильтр логотипов — только явные признаки
-    function isLikelyLogo(line) {
+    // ============ LOGO FILTER — умеренно строгий ============
+    function isLikelyLogo(line, bwImageData, naturalWidth, naturalHeight) {
         const { x0, y0, x1, y1 } = line.bbox;
-        const w = x1 - x0, h = y1 - y0;
+        const w = x1 - x0;
+        const h = y1 - y0;
         const ratio = w / Math.max(h, 1);
         const letters = (line.text.match(/\p{L}/gu) || []).length;
+        const digits = (line.text.match(/\d/g) || []).length;
+        const totalChars = line.text.replace(/\s/g, '').length;
         const wordCount = line.words.length;
 
-        // Залитая фигура (>80% чёрного)
-        if (line.avgBlackRatio > 0.8) return true;
-        // Практически пусто
-        if (line.avgBlackRatio < 0.005) return true;
-        // Одно слово, 1 буква — почти всегда иконка
+        // 1. Плотная заливка — иконка/плашка/логотип
+        if (line.avgBlackRatio > 0.72) return true;
+
+        // 2. Практически пусто — шум/артефакт
+        if (line.avgBlackRatio < 0.01) return true;
+
+        // 3. Мало букв и цифр вместе
+        if (letters + digits < 2) return true;
+
+        // 4. Одиночное слово с 1 буквой — почти всегда иконка
         if (wordCount === 1 && letters <= 1) return true;
-        // Квадратное одиночное слово с ≤2 буквами — иконка
-        if (wordCount === 1 && letters <= 2 && ratio < 1.2) return true;
-        // Очень вытянутое короткое — разделитель
-        if (wordCount === 1 && line.text.replace(/\s/g, '').length <= 3 && ratio > 15) return true;
+
+        // 5. Одиночное квадратное слово с ≤3 буквами (типичный значок)
+        if (wordCount === 1 && letters <= 3 && ratio < 1.4) return true;
+
+        // 6. Очень вытянутое одиночное короткое (стрелки, разделители)
+        if (wordCount === 1 && totalChars <= 3 && ratio > 10) return true;
+
+        // 7. Аномально вытянутое одиночное слово с 1-2 символами
+        if (wordCount === 1 && letters <= 2 && ratio > 5) return true;
+
+        // 8. Изолированное слово с низким OCR-confidence
+        if (wordCount === 1 && line.avgConfidence < 55) return true;
+
+        // 9. Проверка текстуры: считаем переходы чёрное↔белое внутри bbox.
+        //    У букв много переходов, у залитых иконок мало.
+        const stepX = Math.max(1, Math.floor(w / 120));
+        const stepY = Math.max(1, Math.floor(h / 60));
+        let transitions = 0;
+        for (let py = Math.floor(y0); py < Math.ceil(y1); py += stepY) {
+            let prev = -1;
+            for (let px = Math.floor(x0); px < Math.ceil(x1); px += stepX) {
+                if (px < 0 || px >= naturalWidth || py < 0 || py >= naturalHeight) continue;
+                const val = bwImageData.data[(py * naturalWidth + px) * 4] < 128 ? 0 : 1;
+                if (prev !== -1 && val !== prev) transitions++;
+                prev = val;
+            }
+        }
+        const transPerChar = transitions / Math.max(totalChars, 1);
+        // У коротких одиночных слов текстура обычно низкая → иконка
+        if (wordCount === 1 && totalChars <= 3 && transPerChar < 10) return true;
+
         return false;
     }
 
@@ -590,7 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.drawImage(img, 0, 0);
         const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
 
-        // 4. СМЯГЧЁННЫЙ фильтр слов
+        // 4. Фильтр слов (средней строгости)
         const rawWords = [];
         words.forEach(word => {
             const text = word.text.trim();
@@ -600,7 +635,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const digits = (text.match(/\d/g) || []).length;
             if (letters < 1 && digits < 1) return;
             const conf = word.confidence || 0;
-            if (conf < 25) return;  // было 35
+            if (conf < 30) return;
             const { x0, y0, x1, y1 } = word.bbox;
             const bw = Math.max(x1 - x0, 1);
             const bh = Math.max(y1 - y0, 1);
@@ -613,14 +648,14 @@ document.addEventListener('DOMContentLoaded', () => {
             let blackCount = 0;
             for (let i = 0; i < bwPixels.length; i += 4) if (bwPixels[i] < 128) blackCount++;
             const blackRatio = blackCount / (bw * bh);
-            if (blackRatio > 0.9) return;  // было 0.85
-            if (blackRatio < 0.005) return;  // было 0.02
+            if (blackRatio > 0.88) return;
+            if (blackRatio < 0.008) return;
             rawWords.push({ text, bbox: word.bbox, confidence: conf, blackRatio });
         });
 
         // 5. Группировка + фильтр логотипов
         let lines = groupWordsIntoLines(rawWords);
-        lines = lines.filter(line => !isLikelyLogo(line));
+        lines = lines.filter(line => !isLikelyLogo(line, bwImageData, naturalWidth, naturalHeight));
 
         if (lines.length === 0) {
             throw new Error(`Readable text not found (${rawWords.length} words → 0 lines after filter).`);
@@ -641,7 +676,7 @@ document.addEventListener('DOMContentLoaded', () => {
             lines.forEach(line => { line.translatedText = line.text; });
         }
 
-        // ============ ЛОКАЛЬНАЯ функция inpaint — внутри processImageForTranslation, имеет доступ к ctx ============
+        // 7. Inpaint + отрисовка
         function inpaintTextBackground(line) {
             const { x0, y0, x1, y1 } = line.bbox;
             const pad = 4;
@@ -656,7 +691,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const regionImageData = ctx.getImageData(ex0, ey0, rw, rh);
             const data = regionImageData.data;
 
-            // Маска текста
             const mask = new Uint8Array(rw * rh);
             for (let y = 0; y < rh; y++) {
                 for (let x = 0; x < rw; x++) {
@@ -667,7 +701,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            // Дилатация 2px
             const dilR = 2;
             const dilated = mask.slice();
             for (let y = 0; y < rh; y++) {
@@ -684,14 +717,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             mask.set(dilated);
 
-            // Chamfer distance transform
             const dist = new Float32Array(rw * rh);
             const srcIdx = new Int32Array(rw * rh);
             for (let i = 0; i < rw * rh; i++) {
                 if (mask[i]) { dist[i] = Infinity; srcIdx[i] = -1; }
                 else { dist[i] = 0; srcIdx[i] = i; }
             }
-            // Прямой проход
             for (let y = 0; y < rh; y++) {
                 for (let x = 0; x < rw; x++) {
                     const i = y * rw + x;
@@ -702,7 +733,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (y > 0 && x < rw-1) { const ni = (y-1)*rw+x+1; const nd = dist[ni]+1.414; if (nd < dist[i]) { dist[i]=nd; srcIdx[i]=srcIdx[ni]; } }
                 }
             }
-            // Обратный проход
             for (let y = rh-1; y >= 0; y--) {
                 for (let x = rw-1; x >= 0; x--) {
                     const i = y * rw + x;
@@ -713,7 +743,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (y < rh-1 && x > 0) { const ni = (y+1)*rw+x-1; const nd = dist[ni]+1.414; if (nd < dist[i]) { dist[i]=nd; srcIdx[i]=srcIdx[ni]; } }
                 }
             }
-            // Копируем цвет ближайшего не-текстового пикселя
             for (let i = 0; i < rw * rh; i++) {
                 if (!mask[i]) continue;
                 const src = srcIdx[i];
@@ -728,7 +757,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.putImageData(regionImageData, ex0, ey0);
         }
 
-        // 7. Inpaint + отрисовка каждой строки
         for (const line of lines) {
             inpaintTextBackground(line);
 
@@ -795,7 +823,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillText(line.translatedText, x0 + 1, y0 + boxHeight / 2, boxWidth - 2);
         }
 
-        // Используем JPEG для уменьшения размера (важно для PDF)
         return {
             originalSrc: sourceDataUrl,
             translatedSrc: canvas.toDataURL('image/jpeg', 0.92),
@@ -855,6 +882,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const reader = new FileReader();
             reader.onload = async (e) => {
                 try {
+                    // ИСПРАВЛЕНО: получаем jsPDF из window.jspdf
+                    if (!window.jspdf || !window.jspdf.jsPDF) {
+                        throw new Error('jsPDF library not loaded. Check that jspdf.umd.min.js is included.');
+                    }
+                    const { jsPDF } = window.jspdf;
+
                     const typedarray = new Uint8Array(e.target.result);
                     const pdf = await pdfjsLib.getDocument(typedarray).promise;
                     const totalPages = pdf.numPages;
@@ -863,7 +896,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
                         const page = await pdf.getPage(pageNum);
                         const baseViewport = page.getViewport({ scale: 1 });
-                        // scale 1.5 вместо 2 — меньше памяти и размер файла
                         const renderViewport = page.getViewport({ scale: 1.5 });
 
                         const cvs = document.createElement('canvas');
@@ -871,7 +903,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         cvs.height = renderViewport.height;
                         const pageCtx = cvs.getContext('2d', { willReadFrequently: true });
                         await page.render({ canvasContext: pageCtx, viewport: renderViewport }).promise;
-                        // JPEG для меньшего размера
                         const pageDataUrl = cvs.toDataURL('image/jpeg', 0.9);
 
                         progressText.textContent = `Page ${pageNum}/${totalPages}: OCR...`;
@@ -892,10 +923,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             console.warn(`Page ${pageNum} translation failed:`, err.message);
                         }
 
-                        // Освобождаем память
                         cvs.width = 0; cvs.height = 0;
 
-                        // Добавляем страницу в PDF
                         const orient = baseViewport.width > baseViewport.height ? 'landscape' : 'portrait';
                         if (!pdfDoc) {
                             pdfDoc = new jsPDF({ unit: 'pt', format: [baseViewport.width, baseViewport.height], orientation: orient });
@@ -928,7 +957,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Остальные файлы — простой текст
+        // Остальные файлы
         const processText = async (text) => {
             if (!text.trim()) { alert('File empty'); translationProgress.classList.add('hidden'); return; }
             const chunkSize = 2000;
