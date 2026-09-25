@@ -462,29 +462,20 @@ document.addEventListener('DOMContentLoaded', () => {
             line.text = line.words.map(w => w.text).join(' ');
             line.avgConfidence = line.words.reduce((s, w) => s + (w.confidence || 0), 0) / line.words.length;
             line.avgBlackRatio = line.words.reduce((s, w) => s + (w.blackRatio || 0), 0) / line.words.length;
-            line.avgSymbolConfidence = line.words.reduce((s, w) => s + (w.symbolConfidence || 100), 0) / line.words.length;
-            line.symbolCoverage = line.words.reduce((s, w) => s + (w.symbolCoverage || 1), 0) / line.words.length;
         }
         return lines;
     }
 
-    // ============ ЛОГО-ФИЛЬТР: посимвольная валидация ============
-    // Главная идея: если OCR сам сомневается в буквах (symbols), это не текст.
-    // У реальных слов буквы распознаны уверенно и покрывают bbox равномерно.
-    // У логотипов confidence символов низкий, покрытие неравномерное.
     function analyzeWordSymbols(word) {
         const symbols = word.symbols || [];
         if (symbols.length === 0) {
-            // Нет данных по символам — используем confidence слова
             const c = +(word.confidence || 0);
             return { symbolConfidence: c, symbolCoverage: 1, symbolCount: word.text.replace(/\s/g,'').length, hasData: false };
         }
 
         const confs = symbols.map(s => +s.confidence || 0);
         const avgConf = confs.reduce((a, b) => a + b, 0) / confs.length;
-        const highConfCount = confs.filter(c => c > 60).length;
 
-        // Покрытие bbox: суммарная площадь символов / площадь bbox слова
         const wordBox = word.bbox;
         const wordW = wordBox.x1 - wordBox.x0;
         const wordH = wordBox.y1 - wordBox.y0;
@@ -499,7 +490,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return {
             symbolConfidence: avgConf,
-            highConfRatio: highConfCount / confs.length,
             symbolCoverage: coverage,
             symbolCount: symbols.length,
             hasData: true
@@ -516,7 +506,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalChars = line.text.replace(/\s/g, '').length;
         const wordCount = line.words.length;
 
-        // Быстрые геометрические фильтры
         if (line.avgBlackRatio > 0.72) return true;
         if (line.avgBlackRatio < 0.01) return true;
         if (letters + digits < 2) return true;
@@ -525,8 +514,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (wordCount === 1 && totalChars <= 3 && ratio > 10) return true;
         if (wordCount === 1 && letters <= 2 && ratio > 5) return true;
 
-        // ГЛАВНАЯ ПРОВЕРКА: посимвольная валидация
-        // У логотипа confidence символов низкий или покрытие неровное
         const totalSymbolConf = line.words.reduce((s, w) => {
             const a = analyzeWordSymbols(w);
             return s + (a.hasData ? a.symbolConfidence : +(w.confidence || 0));
@@ -537,22 +524,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return s + a.symbolCoverage;
         }, 0) / line.words.length;
 
-        // Если символы плохо распознаны (средний confidence < 55) — не текст
         if (totalSymbolConf < 55) return true;
-
-        // Если символы плохо покрывают bbox (coverage < 0.35) — странная форма, не текст
-        // У обычного текста буквы занимают 40-70% bbox
         if (avgCoverage < 0.35) return true;
-
-        // Изолированное слово с низкой уверенностью
         if (wordCount === 1 && line.avgConfidence < 55) return true;
 
         return false;
     }
 
-    // ============ МНОГОТОЧЕЧНЫЙ ГРАДИЕНТ ============
-    // Собираем цвет текста в N точках по ширине bbox и строим плавный градиент.
-    // Точки без данных — интерполируем между соседними.
     function buildTextGradient(line, originalImageData, bwImageData, naturalWidth, naturalHeight) {
         const { x0, y0, x1, y1 } = line.bbox;
         const w = x1 - x0;
@@ -586,14 +564,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Если совсем нет данных — чёрный
         const anyValid = samples.some(s => s.valid);
         if (!anyValid) return '#000000';
 
-        // Интерполяция пропусков между валидными точками
         for (let i = 0; i < samples.length; i++) {
             if (samples[i].valid) continue;
-            // Найти ближайший валидный слева
             let left = -1, right = -1;
             for (let j = i - 1; j >= 0; j--) if (samples[j].valid) { left = j; break; }
             for (let j = i + 1; j < samples.length; j++) if (samples[j].valid) { right = j; break; }
@@ -617,23 +592,35 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Если остался только 1 валидный цвет — просто используем его
         const validSamples = samples.filter(s => s.valid);
         if (validSamples.length === 0) return '#000000';
 
-        // Проверяем разброс: если все цвета почти одинаковые, всё равно используем градиент (для совместимости)
-        const grad = ctx => {
+        return (ctx) => {
             const g = ctx.createLinearGradient(x0, y0, x1, y0);
             validSamples.forEach(s => {
                 g.addColorStop(s.pos, `rgb(${Math.round(s.r)}, ${Math.round(s.g)}, ${Math.round(s.b)})`);
             });
             return g;
         };
-        return grad;
     }
 
-    // ============ INPAINT (nearest-neighbor) ============
-    function makeInpaintFunction(ctx, bwImageData, naturalWidth, naturalHeight) {
+    // ============ INPAINT С ЗАЩИТОЙ ЛОГОТИПОВ ============
+    // Принимает массив защищённых bbox'ов. Пиксели, попадающие внутрь
+    // защищённой области (с отступом expand), не затираются.
+    function makeInpaintFunction(ctx, bwImageData, naturalWidth, naturalHeight, protectedBoxes) {
+        // Предварительно строим карту защиты для быстрого поиска
+        // (в пиксельной сетке с расширением)
+        const protectExpand = 4; // защищаем логотип с запасом
+        function isProtected(px, py) {
+            for (const b of protectedBoxes) {
+                if (px >= b.x0 - protectExpand && px <= b.x1 + protectExpand &&
+                    py >= b.y0 - protectExpand && py <= b.y1 + protectExpand) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         return function inpaintRegion(x0, y0, x1, y1) {
             const pad = 4;
             const ex0 = Math.max(0, Math.floor(x0) - pad);
@@ -647,16 +634,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const regionImageData = ctx.getImageData(ex0, ey0, rw, rh);
             const data = regionImageData.data;
 
+            // Строим маску текста с учётом защиты
             const mask = new Uint8Array(rw * rh);
+            let hasAnyMask = false;
             for (let y = 0; y < rh; y++) {
                 for (let x = 0; x < rw; x++) {
                     const px = ex0 + x, py = ey0 + y;
+                    // Если пиксель защищён — НЕ считаем его текстом
+                    if (isProtected(px, py)) continue;
                     if (bwImageData.data[(py * naturalWidth + px) * 4] < 128) {
                         mask[y * rw + x] = 1;
+                        hasAnyMask = true;
                     }
                 }
             }
+            if (!hasAnyMask) return;
 
+            // Дилатация — но также с защитой
             const dilR = 2;
             const dilated = mask.slice();
             for (let y = 0; y < rh; y++) {
@@ -666,6 +660,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         for (let dx = -dilR; dx <= dilR; dx++) {
                             const ny = y + dy, nx = x + dx;
                             if (ny < 0 || ny >= rh || nx < 0 || nx >= rw) continue;
+                            const px = ex0 + nx, py = ey0 + ny;
+                            // Не расширяем маску внутрь защищённых зон
+                            if (isProtected(px, py)) continue;
                             dilated[ny * rw + nx] = 1;
                         }
                     }
@@ -715,7 +712,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function processImageForTranslation(sourceDataUrl, sourceLang, targetLang, onProgress) {
-        // 1. Бинаризация Otsu
         const bwDataUrl = await new Promise((resolve, reject) => {
             const srcImg = new Image();
             srcImg.onload = () => {
@@ -769,7 +765,6 @@ document.addEventListener('DOMContentLoaded', () => {
             srcImg.src = sourceDataUrl;
         });
 
-        // 2. Tesseract
         const tessMap = {
             'en': 'eng', 'en-US': 'eng', 'en-GB': 'eng',
             'ru': 'rus', 'uk': 'ukr', 'be': 'bel',
@@ -793,7 +788,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const words = result.data && result.data.words;
         if (!words || words.length === 0) throw new Error('No text detected.');
 
-        // 3. Canvas + BW
         const bwImg = new Image();
         bwImg.src = bwDataUrl;
         await new Promise((res, rej) => { bwImg.onload = res; bwImg.onerror = rej; });
@@ -817,7 +811,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.drawImage(img, 0, 0);
         const originalImageData = ctx.getImageData(0, 0, naturalWidth, naturalHeight);
 
-        // 4. Фильтр слов
         const rawWords = [];
         words.forEach(word => {
             const text = word.text.trim();
@@ -854,17 +847,30 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // 5. Группировка + лого-фильтр
-        let lines = groupWordsIntoLines(rawWords);
-        lines = lines.filter(line => !isLikelyLogo(line, bwImageData, naturalWidth, naturalHeight));
+        let allLines = groupWordsIntoLines(rawWords);
 
-        if (lines.length === 0) {
-            throw new Error(`Readable text not found (${rawWords.length} words → 0 lines after filter).`);
+        // Разделяем на "текстовые" и "логи"
+        const textLines = [];
+        const protectedBoxes = []; // bbox'ы логотипов, которые нельзя затирать
+        for (const line of allLines) {
+            if (isLikelyLogo(line, bwImageData, naturalWidth, naturalHeight)) {
+                protectedBoxes.push({
+                    x0: line.bbox.x0,
+                    y0: line.bbox.y0,
+                    x1: line.bbox.x1,
+                    y1: line.bbox.y1
+                });
+            } else {
+                textLines.push(line);
+            }
         }
 
-        // 6. Перевод строками
+        if (textLines.length === 0) {
+            throw new Error(`Readable text not found (${rawWords.length} words → 0 text lines, ${protectedBoxes.length} logos protected).`);
+        }
+
         if (onProgress) onProgress('Translating text...', 100);
-        const joinedText = lines.map(l => l.text).join('\n');
+        const joinedText = textLines.map(l => l.text).join('\n');
         const transUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(joinedText)}`;
         const transResp = await fetch(transUrl);
         const transData = await transResp.json();
@@ -872,20 +878,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (transData && transData[0]) {
             fullTranslatedText = transData[0].map(c => c[0] || '').join('');
             const arr = fullTranslatedText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            lines.forEach((line, i) => { line.translatedText = arr[i] || line.text; });
+            textLines.forEach((line, i) => { line.translatedText = arr[i] || line.text; });
         } else {
-            lines.forEach(line => { line.translatedText = line.text; });
+            textLines.forEach(line => { line.translatedText = line.text; });
         }
 
-        // 7. Inpaint + отрисовка
-        const inpaintRegion = makeInpaintFunction(ctx, bwImageData, naturalWidth, naturalHeight);
+        // Inpaint-функция, знающая про защищённые зоны
+        const inpaintRegion = makeInpaintFunction(ctx, bwImageData, naturalWidth, naturalHeight, protectedBoxes);
 
-        for (const line of lines) {
+        for (const line of textLines) {
             const origBox = { x0: line.bbox.x0, y0: line.bbox.y0, x1: line.bbox.x1, y1: line.bbox.y1 };
             const origW = origBox.x1 - origBox.x0;
             const origH = origBox.y1 - origBox.y0;
 
-            // Реальная высота текста в строке
             const startY = Math.max(0, Math.floor(origBox.y0));
             const endY = Math.min(naturalHeight, Math.ceil(origBox.y1));
             let topRow = null, bottomRow = null;
@@ -898,7 +903,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             const realH = (topRow !== null && bottomRow !== null) ? (bottomRow - topRow + 1) : origH;
 
-            // Плотность для жирности
             let textPixels = 0, totalPixels = 0;
             for (let py = startY; py < endY; py++) {
                 for (let px = Math.floor(origBox.x0); px < Math.ceil(origBox.x1); px++) {
@@ -910,48 +914,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const fillRatio = totalPixels > 0 ? textPixels / totalPixels : 0;
             const fontWeight = fillRatio > 0.30 ? 700 : (fillRatio > 0.22 ? 500 : 400);
 
-            // ТОЧКА 1: подбираем размер шрифта, при котором переведённый текст влезает
             let fontSize = Math.max(Math.floor(realH * 0.95), 8);
             ctx.font = `${fontWeight} ${fontSize}px Arial, "Segoe UI", sans-serif`;
             let textWidth = ctx.measureText(line.translatedText).width;
 
-            // Уменьшение шрифта, если не влезает
             while (textWidth > origW - 2 && fontSize > 8) {
                 fontSize--;
                 ctx.font = `${fontWeight} ${fontSize}px Arial, "Segoe UI", sans-serif`;
                 textWidth = ctx.measureText(line.translatedText).width;
             }
 
-            // ТОЧКА 2: определяем ФИНАЛЬНЫЙ bbox для заливки фона
-            // Если текст всё ещё шире оригинала, расширяем bbox симметрично,
-            // но не более чем в 2 раза от оригинала, и не выходя за границы изображения.
             let finalBox;
             if (textWidth <= origW - 2) {
-                // Помещается — используем оригинальный bbox
                 finalBox = { ...origBox };
             } else {
-                // Расширяем по горизонтали
                 const centerX = (origBox.x0 + origBox.x1) / 2;
                 const neededWidth = Math.min(textWidth + 4, origW * 2);
                 const halfW = neededWidth / 2;
                 let nx0 = centerX - halfW;
                 let nx1 = centerX + halfW;
-                // Клипаем по границам изображения
                 if (nx0 < 0) { nx1 += -nx0; nx0 = 0; }
                 if (nx1 > naturalWidth) { nx0 -= (nx1 - naturalWidth); nx1 = naturalWidth; }
                 nx0 = Math.max(0, nx0);
-                finalBox = {
-                    x0: nx0,
-                    y0: origBox.y0,
-                    x1: nx1,
-                    y1: origBox.y1
-                };
+                finalBox = { x0: nx0, y0: origBox.y0, x1: nx1, y1: origBox.y1 };
             }
 
-            // ТОЧКА 3: инпейнтим ИМЕННО финальный bbox — под новым текстом
+            // Inpaint — с защитой логотипов
             inpaintRegion(finalBox.x0, finalBox.y0, finalBox.x1, finalBox.y1);
 
-            // ТОЧКА 4: градиент
             const gradientOrColor = buildTextGradient(line, originalImageData, bwImageData, naturalWidth, naturalHeight);
             if (typeof gradientOrColor === 'function') {
                 ctx.fillStyle = gradientOrColor(ctx);
@@ -959,7 +949,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fillStyle = gradientOrColor;
             }
 
-            // ТОЧКА 5: рисуем текст в финальном bbox
             const finalW = finalBox.x1 - finalBox.x0;
             const finalH = finalBox.y1 - finalBox.y0;
             ctx.textBaseline = 'middle';
@@ -1099,7 +1088,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Остальные файлы
         const processText = async (text) => {
             if (!text.trim()) { alert('File empty'); translationProgress.classList.add('hidden'); return; }
             const chunkSize = 2000;
